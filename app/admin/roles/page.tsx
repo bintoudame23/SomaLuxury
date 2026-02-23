@@ -112,7 +112,6 @@ export default function RolesPage() {
         <CardHeader>
           <CardTitle>Gestion des rôles</CardTitle>
         </CardHeader>
-
         <CardContent>
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-100 text-gray-700">

@@ -1,66 +1,79 @@
+"use client";
+
 import { ID, Query } from "appwrite";
 import { databases } from "@/lib/appwrite";
 
 const databaseId = process.env.NEXT_PUBLIC_DATABASE_ID!;
 const categoriesTableId = process.env.NEXT_PUBLIC_TABLE_CATEGORIES_ID!;
-const queryLimit = 10;
+const queryLimit = 1000;
 
-export interface categorie {
-    
-   $id: string;
-  nom_categorie: string;
+export interface Categorie {
+  $id: string;
+  nom_categorie: string;       
+  subCategories: string[];     
   $createdAt: string;
   $updatedAt: string;
 }
 
-export const fetchCategories = async () => {
+export const fetchCategories = async (): Promise<Categorie[]> => {
   try {
     const response = await databases.listDocuments(
       databaseId,
       categoriesTableId,
       [Query.orderDesc("$createdAt"), Query.limit(queryLimit)]
     );
-    return response.documents;
+
+    return response.documents.map((doc) => {
+      const data = doc as unknown as Categorie;
+
+      return {
+        $id: data.$id,
+        nom_categorie: data.nom_categorie,
+        subCategories: data.subCategories ?? [], // ⚡ toujours un tableau
+        $createdAt: data.$createdAt,
+        $updatedAt: data.$updatedAt,
+      };
+    });
   } catch (error) {
-    console.log("Fetch Categorie Error:", error);
+    console.error("Fetch Categorie Error:", error);
+    return [];
   }
 };
-
-export const addCategorie = async (name: string) => {
+export const addCategorie = async (
+  name: string,
+  subCategories: string[] = []
+) => {
   try {
     return await databases.createDocument(
       databaseId,
       categoriesTableId,
       ID.unique(),
-      { nom_categorie: name },
+      {
+        nom_categorie: name,
+        subCategories,
+      }
     );
   } catch (error) {
-    console.log("Add Categorie Error:", error);
+    console.error("Add Categorie Error:", error);
+    throw error;
   }
 };
-
 export const deleteCategory = async (rowId: string) => {
   try {
-    return await databases.deleteDocument(
-      databaseId,
-      categoriesTableId,
-      rowId
-    );
+    return await databases.deleteDocument(databaseId, categoriesTableId, rowId);
   } catch (error) {
-    console.log("Delete Error:", error);
+    console.error("Delete Error:", error);
+    throw error;
   }
 };
-
-export const updateCategory = async (rowId: string, name: string) => {
+export const updateCategory = async (
+  rowId: string,
+  data: { nom_categorie?: string; subCategories?: string[] }
+) => {
   try {
-    return await databases.updateDocument(
-      databaseId,
-      categoriesTableId,
-      rowId,
-      { nom_categorie: name }
-    );
+    return await databases.updateDocument(databaseId, categoriesTableId, rowId, data);
   } catch (error) {
-    console.log("Update Error:", error);
+    console.error("Update Error:", error);
     throw error;
   }
 };

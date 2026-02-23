@@ -1,6 +1,6 @@
 "use client"
 import { ID, Query} from "appwrite";
-import { databases } from "@/lib/appwrite"; // import databases
+import { databases } from "@/lib/appwrite";
 
 const databaseId = process.env.NEXT_PUBLIC_DATABASE_ID!;
 const commandeTableId = process.env.NEXT_PUBLIC_TABLE_COMMANDE_ID!;

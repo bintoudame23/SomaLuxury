@@ -1,201 +1,194 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { IconFolderPlus, IconTrash, IconPencil, IconEye } from "@tabler/icons-react";
-import { addCategorie, fetchCategories, updateCategory as updateCategoryApi,deleteCategory as deleteCategoryApi }from "@/lib/categorieClient";
+import {
+  IconFolderPlus, IconTrash, IconPencil, IconPlus, IconChevronDown, IconChevronRight
+} from "@tabler/icons-react";
 import { Spinner } from "@/components/ui/spinner";
-import { promise } from "zod";
-import { UpdateCategory } from "@/components/updateCategory";
+
+import { fetchCategories, addCategorie, updateCategory, deleteCategory } from "@/lib/categorieClient";
 
 interface Category {
-  id: number;
-  name: string;
-  products: number;
+  $id: string;
+  nom_categorie: string;
+  subCategories: string[];
 }
 
 export default function CategoriesPage() {
- 
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [newName, setNewName] = useState("");
+  const [subCategories, setSubCategories] = useState<string[]>([""]);
   const [isOpen, setIsOpen] = useState(false);
-  const [editingId, setEditingId] = useState<Category | null>(null);
-  const [submitting, setSubmitting] = useState(false)
-  
-  const openAdd = () => {
-    setEditingId(null);
-    setNewName("");
-    setIsOpen(true);
-  };
+  const [submitting, setSubmitting] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
-  const openEdit = (cat: Category) => {
-    setEditingId(cat);
-    setNewName(cat.name);
+  const loadCategories = async () => {
+    const data = await fetchCategories();
+    setCategories(data);
+  };
+  const openDialog = (category?: Category) => {
+    if (category) {
+      setEditingCategory(category);
+      setNewName(category.nom_categorie);
+      setSubCategories(category.subCategories.length > 0 ? category.subCategories : [""]);
+    } else {
+      setEditingCategory(null);
+      setNewName("");
+      setSubCategories([""]);
+    }
     setIsOpen(true);
   };
 
   const closeDialog = () => {
     setIsOpen(false);
-    setEditingId(null);
     setNewName("");
+    setSubCategories([""]);
+    setEditingCategory(null);
   };
 
-  useEffect(() => {
-    const fetch = async () => {
-      const response = await fetchCategories();
-      setCategories(response)
-    }
-    fetch()
-  }, [])
+  const addSubCategory = () => setSubCategories([...subCategories, ""]);
+  const updateSubCategory = (index: number, value: string) => {
+    const copy = [...subCategories];
+    copy[index] = value;
+    setSubCategories(copy);
+  };
+  const removeSubCategory = (index: number) =>
+    setSubCategories(subCategories.filter((_, i) => i !== index));
+  const saveCategory = async () => {
+    if (!newName.trim()) return;
+    setSubmitting(true);
 
-  console.log(categories);
-  
-  const saveCategory =async () => {
-    setSubmitting(true)
     try {
-      const response = await addCategorie(newName)
-      console.log(response);
-    } catch (error) {
-      console.log(error);
-    } finally{
-      setSubmitting(false)
+      const cleanSubs = subCategories.filter(s => s.trim() !== "");
+
+      if (editingCategory) {
+        await updateCategory(editingCategory.$id, { nom_categorie: newName, subCategories: cleanSubs });
+      } else {
+        await addCategorie(newName, cleanSubs);
+      }
+
+      await loadCategories();
       closeDialog();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'opération");
+    } finally {
+      setSubmitting(false);
     }
   };
-  // non
-const updateCategory = async (rowId: string, newName: string) => {
-    try {
-        await updateCategoryApi(rowId, newName);
-        setCategories((prev) =>
-            prev.map((cat) =>
-                cat.$id === rowId ? { ...cat, nom_categorie: newName }: cat
-            )
-        );
-        alert("modification avec succes!");
-    } catch (error) {
-        console.error(error);
-        alert("Une erreur est survenue lors de la modification.");
-    }
-};
-const deleteCategory = async (rowId: string) => {
-    if (!window.confirm("Voulez-vous supprimer cette catégorie ?")) 
-      return;
-    try {
-        await deleteCategoryApi(rowId);
-        setCategories((prev) =>
-            prev.filter((cat) => cat.$id !== rowId)
-        );
-        alert("Catégorie supprimée avec succès !");
-    } catch (error) {
-        console.error("Erreur lors de la suppression :", error);
-        alert("Une erreur est survenue lors de la suppression.");
-    }
-};
+  const handleDelete = async (id: string) => {
+    if (!confirm("Supprimer cette catégorie ?")) return;
+    await deleteCategory(id);
+    await loadCategories();
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedCategories(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Catégories</h1>
-          <p className="text-gray-500">Gestion des catégories de produits.</p>
+          <p className="text-gray-500">Gestion complète des catégories et sous-catégories</p>
         </div>
-        <div>
-          <Dialog open={isOpen} onOpenChange={(v) => setIsOpen(v)}>
-            <DialogTrigger asChild>
-              <Button onClick={openAdd} className="flex items-center gap-2">
-                <IconFolderPlus size={18} />
-                Ajouter une catégorie
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>{editingId ? "Modifier la catégorie" : "Nouvelle catégorie"}</DialogTitle>
-              </DialogHeader>
-              <div className="mt-2 space-y-3">
-                <Input
-                  placeholder="Nom de la catégorie"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                />
+
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => openDialog()} className="flex items-center gap-2">
+              <IconFolderPlus size={18} /> Ajouter une catégorie
+            </Button>
+          </DialogTrigger>
+
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingCategory ? "Modifier la catégorie" : "Nouvelle catégorie"}</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <Input
+                placeholder="Nom de la catégorie"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+              />
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Sous-catégories</p>
+                {subCategories.map((sub, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <Input
+                      placeholder={`Sous-catégorie ${idx + 1}`}
+                      value={sub}
+                      onChange={e => updateSubCategory(idx, e.target.value)}
+                    />
+                    <Button variant="ghost" onClick={() => removeSubCategory(idx)}>
+                      <IconTrash size={16} />
+                    </Button>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={addSubCategory} className="w-full flex items-center justify-center gap-2">
+                  <IconPlus size={16} /> Ajouter une sous-catégorie
+                </Button>
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={saveCategory} className="flex-1 flex items-center justify-center gap-2">
+                  {submitting && <Spinner />}
+                  {editingCategory ? "Modifier" : "Ajouter"}
+                </Button>
+                <Button variant="ghost" onClick={closeDialog} className="flex-1">Annuler</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* LISTE CATEGORIES */}
+      <Card className="shadow-lg">
+        <CardHeader><CardTitle>Liste des catégories</CardTitle></CardHeader>
+        <CardContent>
+          {categories.length === 0 && <p className="text-gray-500">Aucune catégorie</p>}
+
+          {categories.map(cat => (
+            <div key={cat.$id} className="mb-4 border rounded p-3 hover:shadow-md transition">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {cat.subCategories?.length > 0 && (
+                    <button onClick={() => toggleExpand(cat.$id)}>
+                      {expandedCategories.includes(cat.$id) ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
+                    </button>
+                  )}
+                  <span className="font-semibold text-lg">{cat.nom_categorie}</span>
+                  <span className="text-sm text-gray-400">{cat.subCategories?.length || 0} sous-catégorie(s)</span>
+                </div>
+
                 <div className="flex gap-2">
-                  <Button onClick={saveCategory} className="flex-1">
-                    {submitting && <Spinner/>}
-                    {editingId ? "Enregistrer" : "Ajouter"}
-                  </Button>
-                  <Button variant="ghost" onClick={closeDialog} className="flex-1">
-                    Annuler
-                  </Button>
+                  <button onClick={() => openDialog(cat)} className="text-blue-600"><IconPencil size={16} /></button>
+                  <button onClick={() => handleDelete(cat.$id)} className="text-red-600"><IconTrash size={16} /></button>
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Liste des catégories ({categories.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-3 text-sm text-gray-600">Nom</th>
-                  <th className="p-3 text-sm text-gray-600 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="p-4 text-center text-gray-500">
-                      Aucune catégorie.
-                    </td>
-                  </tr>
-                )}
-                {categories.map((cat) => (
-                  <tr key={cat.$id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 align-middle">
-                      <div className="flex items-center gap-3">
-                        <div className="text-sm font-medium">{cat.nom_categorie}</div>
-                      </div>
-                    </td> 
-                    <td className="p-3 align-middle text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <Link
-                          href={`/admin/produit?category=${encodeURIComponent(cat.name)}`}
-                          className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
-                        >
-                          <IconEye size={16} /> Voir
-                        </Link>
-                      <UpdateCategory categorie={cat} />
-                          <button
-                           onClick={() => deleteCategory(cat.$id)}
-                          className="text-red-600 hover:text-red-800"
-                          aria-label={`Supprimer ${cat.nom_categorie}`}
-                        >
-                          <IconTrash size={18} />
-                        </button>                                                   
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+              {expandedCategories.includes(cat.$id) && cat.subCategories?.length > 0 && (
+                <div className="ml-6 mt-2 flex flex-wrap gap-2">
+                  {cat.subCategories.map((sub, idx) => (
+                    <span key={idx} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">{sub}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>

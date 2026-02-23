@@ -2,46 +2,65 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { produits } from "@/lib/products";
-import { Produit } from "@/lib/types";
+import { fetchProduct } from "@/lib/addProductClient";
+import { useCart } from "@/context/CartContext";
+
+interface Produit {
+  id: string;
+  name: string;
+  price: number;
+  image?: string;
+  category?: string;
+}
+
+const mediaUrl = (id: string) =>
+  `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_BUCKET_MEDIA_ID}/files/${id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
 
 const Bijoux: React.FC = () => {
+  const { addToCart } = useCart();
+
   const [produitsBijoux, setProduitsBijoux] = useState<Produit[]>([]);
-  const [cart, setCart] = useState<Produit[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<"default" | "priceAsc" | "priceDesc" | "alpha">(
-    "default"
-  );
+  const [filter, setFilter] = useState<
+    "default" | "priceAsc" | "priceDesc" | "alpha"
+  >("default");
 
-  // 🔹 Filtrer les produits de la catégorie "bijoux"
+  /* ===================== FETCH APPWRITE ===================== */
   useEffect(() => {
-    const bijoux = produits.filter(produit => produit.category === "bijoux");
-    setProduitsBijoux(bijoux);
+    const loadProducts = async () => {
+      try {
+        const res = await fetchProduct();
+
+        const formatted: Produit[] = res
+          .filter(
+            (p: any) =>
+              p.categorie?.toLowerCase() === "bijoux" ||
+              p.categorie?.toLowerCase() === "bijou"
+          )
+          .map((p: any) => ({
+            id: p.$id,
+            name: p.nom_produit ?? "Produit sans nom",
+            price: p.prix ?? 0,
+            image: p.images?.[0]
+              ? mediaUrl(p.images[0])
+              : "/default.jpg",
+            category: p.categorie ?? "",
+          }));
+
+        setProduitsBijoux(formatted);
+      } catch (err) {
+        console.error("Erreur chargement bijoux :", err);
+      }
+    };
+
+    loadProducts();
   }, []);
 
-  // 🔹 Charger le panier depuis le localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) setCart(JSON.parse(savedCart));
-  }, []);
-
-  // 🔹 Sauvegarder le panier dans le localStorage
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
-
-  // 🔹 Ajouter un produit au panier
-  const handleAddToCart = (produit: Produit) => {
-    setCart(prev => [...prev, produit]);
-    alert(`${produit.name} a été ajouté au panier !`);
-  };
-
-  // 🔹 Filtrage selon le terme de recherche
-  let produitsFiltres = produitsBijoux.filter(produit =>
-    produit.name.toLowerCase().includes(searchTerm.toLowerCase())
+  /* ===================== FILTRAGE ===================== */
+  let produitsFiltres = produitsBijoux.filter((p) =>
+    (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 🔹 Appliquer le tri
   switch (filter) {
     case "priceAsc":
       produitsFiltres.sort((a, b) => a.price - b.price);
@@ -55,115 +74,107 @@ const Bijoux: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-      <main className="max-w-7xl mx-auto py-16 px-4 lg:px-6">
-        <h1 className="text-4xl font-bold text-center mb-12 text-gray-900">Bijoux & Accessoires 💍</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* ===================== HERO ===================== */}
+      <section className="bg-black text-white py-20 text-center">
+        <h1 className="text-5xl font-extrabold mb-4">
+          Bijoux & Accessoires
+        </h1>
+        <p className="text-lg opacity-90">
+          Sublimez votre élégance avec nos pièces d’exception
+        </p>
+      </section>
 
+      <main className="max-w-7xl mx-auto py-16 px-4 lg:px-6">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* FILTRE GAUCHE */}
-          <aside className="w-full lg:w-64 bg-white rounded-2xl shadow-md p-6 flex-shrink-0">
-            {/* Barre de recherche */}
-            <div className="mb-6">
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 rounded-full border border-gray-300 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
-              />
-            </div>
+          {/* ===================== FILTRES ===================== */}
+          <aside className="w-full lg:w-64 bg-white rounded-2xl shadow-md p-6">
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 rounded-full border mb-6 focus:ring-2 focus:ring-pink-500"
+            />
 
             <h2 className="text-xl font-semibold mb-4">Trier</h2>
+
             <div className="flex flex-col gap-3">
-              <button
-                onClick={() => setFilter("default")}
-                className={`text-left px-4 py-2 rounded-lg transition ${
-                  filter === "default"
-                    ? "bg-gray-800 text-white font-semibold"
-                    : "hover:bg-pink-50"
-                }`}
-              >
-                Par défaut
-              </button>
-              <button
-                onClick={() => setFilter("alpha")}
-                className={`text-left px-4 py-2 rounded-lg transition ${
-                  filter === "alpha"
-                    ? "bg-gray-800 text-white font-semibold"
-                    : "hover:bg-pink-50"
-                }`}
-              >
-                A-Z
-              </button>
-              <button
-                onClick={() => setFilter("priceAsc")}
-                className={`text-left px-4 py-2 rounded-lg transition ${
-                  filter === "priceAsc"
-                    ? "bg-gray-800 text-white font-semibold"
-                    : "hover:bg-pink-50"
-                }`}
-              >
-                Prix croissant
-              </button>
-              <button
-                onClick={() => setFilter("priceDesc")}
-                className={`text-left px-4 py-2 rounded-lg transition ${
-                  filter === "priceDesc"
-                    ? "bg-gray-800 text-white font-semibold"
-                    : "hover:bg-pink-50"
-                }`}
-              >
-                Prix décroissant
-              </button>
+              {[
+                ["default", "Par défaut"],
+                ["alpha", "A-Z"],
+                ["priceAsc", "Prix croissant"],
+                ["priceDesc", "Prix décroissant"],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key as any)}
+                  className={`px-4 py-2 rounded-lg text-left transition ${
+                    filter === key
+                      ? "bg-gray-800 text-white"
+                      : "hover:bg-pink-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </aside>
 
-          {/* LISTE DES PRODUITS */}
-          <section className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* ===================== PRODUITS ===================== */}
+          <section className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {produitsFiltres.length > 0 ? (
-              produitsFiltres.map((produit) => (
+              produitsFiltres.map((p) => (
                 <div
-                  key={produit.id}
-                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer flex flex-col"
+                  key={p.id}
+                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition transform hover:-translate-y-1 flex flex-col"
                 >
-                  <Link href={`/boutique/produit/${produit.id}`}>
+                  <Link href={`/boutique/produit/${p.id}`}>
                     <img
-                      src={produit.image || "/default.jpg"}
-                      alt={produit.name}
-                      className="w-full h-64 object-cover rounded-t-2xl"
+                      src={p.image}
+                      alt={p.name}
+                      className="h-64 w-full object-cover rounded-t-2xl"
                     />
                   </Link>
 
-                  <div className="p-4 flex flex-col items-center text-center flex-grow">
-                    <h3 className="text-lg font-semibold mb-1 text-gray-800">
-                      {produit.name}
-                    </h3>
+                  <div className="p-4 text-center flex flex-col gap-2 flex-grow">
+                    <h3 className="font-semibold text-lg">{p.name}</h3>
 
-                    <p className="text-gray-700 font-medium mb-3">
-                      {produit.price.toLocaleString()} FCFA
+                    <p className="font-bold text-gray-800">
+                      {p.price.toLocaleString()} FCFA
                     </p>
 
                     <button
-                      onClick={() => handleAddToCart(produit)}
-                      className="bg-gray-800 hover:bg-pink-600 text-white font-medium py-2 px-5 rounded-full transition transform hover:scale-105 text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart({
+                          id: p.id,
+                          name: p.name,
+                          price: p.price,
+                          image: p.image,
+                        });
+                        alert(`🛒 ${p.name} ajouté au panier !`);
+                      }}
+                      className="mt-auto w-full bg-pink-600 hover:bg-pink-700
+                                 text-white py-2 rounded-full font-semibold
+                                 transition cursor-pointer active:scale-95"
                     >
-                      Ajouter
+                      Ajouter au panier
                     </button>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 text-center mt-20 text-lg col-span-full">
-                Aucun produit trouvé pour "{searchTerm}".
+              <p className="col-span-full text-center text-gray-500 mt-20">
+                Aucun bijou trouvé.
               </p>
             )}
           </section>
         </div>
       </main>
 
-      {/* FOOTER */}
-      <footer className="bg-black text-white py-4 mt-20 text-center">
-        <p>© {new Date().getFullYear()} Soma Luxury. Tous droits réservés.</p>
+      <footer className="bg-black text-white text-center py-6">
+        © {new Date().getFullYear()} Soma Luxury
       </footer>
     </div>
   );

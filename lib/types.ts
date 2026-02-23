@@ -10,8 +10,9 @@ export interface Produit {
   quantity?: number;               
   category?: string;               
   subCategory?: string;           
-  colors?: string[];              
+  colors?: string;              
   taille?: string[];    
   size?: string[];           
-  marque?: string;                 
+  marque?: string;    
+  categorieId?: string;             
 }

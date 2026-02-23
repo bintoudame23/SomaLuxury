@@ -17,16 +17,8 @@ import {
 interface User {
   name: string;
   avatar?: string;
-  totalOrders?: number; // nombre de commandes traitées par l'utilisateur
+  totalOrders?: number; 
 }
-
-interface Product {
-  id: number;
-  name: string;
-  sold: number;
-  price: number;
-}
-
 interface Order {
   id: string;
   customer: string;
@@ -34,16 +26,14 @@ interface Order {
   status: string;
 }
 
-// 
 interface OverviewProps {
   currentUser?: User;
 }
 
 export default function OverviewPage({ currentUser }: OverviewProps) {
-  // Fallback utilisateur
+  
   const user = currentUser || { name:"fatu", avatar: "/default-avatar.png", totalOrders: 0 };
 
-  // Données KPI
   const kpiData = {
     totalSales: 0,
     totalOrders: user.totalOrders || 0,
@@ -60,17 +50,8 @@ export default function OverviewPage({ currentUser }: OverviewProps) {
     { month: "Jun", sales: 0 },
   ];
 
-  
-  // const recentOrders: Order[] = [
-  //   { id: "#001", customer: "John Doe", amount: 120, status: "Paid" },
-  //   { id: "#002", customer: "Jane Smith", amount: 250, status: "Pending" },
-  //   { id: "#003", customer: "Alioune", amount: 90, status: "Paid" },
-  //   { id: "#004", customer: "Fatou", amount: 150, status: "Shipped" },
-  // ];
-
   return (
     <div className="p-6 space-y-6">
-      {/* Header avec bienvenue */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <img
@@ -86,8 +67,6 @@ export default function OverviewPage({ currentUser }: OverviewProps) {
           </div>
         </div>
       </div>
-
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <Card className="bg-pink-50">
           <CardContent>
@@ -115,7 +94,6 @@ export default function OverviewPage({ currentUser }: OverviewProps) {
         </Card>
       </div>
 
-      {/* Graphiques ventes et commandes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <Card className="h-64">
           <CardContent>
@@ -145,8 +123,6 @@ export default function OverviewPage({ currentUser }: OverviewProps) {
           </CardContent>
         </Card>
       </div>
-
-    
       <Card>
         <CardContent>
           <h2 className="font-semibold mb-4">Recent Orders</h2>
@@ -159,16 +135,6 @@ export default function OverviewPage({ currentUser }: OverviewProps) {
                 <th className="py-2 px-4">Status</th>
               </tr>
             </thead>
-            <tbody>
-              {/* {recentOrders.map((order) => (
-                <tr key={order.id} className="border-b hover:bg-gray-100">
-                  <td className="py-2 px-4">{order.id}</td>
-                  <td className="py-2 px-4">{order.customer}</td>
-                  <td className="py-2 px-4">{order.amount} FCFA</td>
-                  <td className="py-2 px-4">{order.status}</td>
-                </tr>
-              ))} */}
-            </tbody>
           </table>
         </CardContent>
       </Card>

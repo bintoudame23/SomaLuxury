@@ -94,7 +94,6 @@ export default function AdminContactPage({ currentUser, currentUserRole }: { cur
         {unreadCount > 0 && <Badge variant="destructive">{unreadCount}</Badge>}
       </h1>
 
-      {/* Recherche et filtres */}
       <div className="flex flex-wrap gap-2 items-center">
         <Input
           placeholder="Rechercher par nom, email ou sujet..."
@@ -114,7 +113,6 @@ export default function AdminContactPage({ currentUser, currentUserRole }: { cur
         </select>
       </div>
 
-      {/* Tableau des messages */}
       <Card className="shadow-lg border">
         <CardHeader>
           <CardTitle>Messages reçus</CardTitle>
@@ -177,7 +175,6 @@ export default function AdminContactPage({ currentUser, currentUserRole }: { cur
         </CardContent>
       </Card>
 
-      {/* Détail du message sélectionné */}
       {selectedMessage && (
         <Card className="shadow-lg border mt-4">
           <CardHeader>
@@ -209,3 +206,4 @@ export default function AdminContactPage({ currentUser, currentUserRole }: { cur
     </div>
   );
 }
+

@@ -23,7 +23,7 @@ interface Facture {
 }
 
 const facturesMock: Facture[] = [
-  // { id: 1, facture: "12345", client: "Fatou", produit: "Van clef", quantite: 1, total: 2500, statutLivraison: "Livré", date: "2025-12-20" },
+  { id: 1, facture: "12345", client: "Fatou", produit: "Van clef", quantite: 1, total: 2500, statutLivraison: "Livré", date: "2025-12-20" },
 ];
 
 export default function TableauManager() {

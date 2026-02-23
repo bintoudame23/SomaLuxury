@@ -1,4 +1,4 @@
-import { Client, Account, Databases, TablesDB } from "node-appwrite";
+import { Client, Account, Databases, TablesDB , Storage, Query} from "node-appwrite";
 
 const client = new Client()
     .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!) // your endpoint
@@ -10,9 +10,13 @@ const account = new Account(client);
 
 const databases = new Databases(client);
 
+const storage = new Storage(client)
+
 const tableDB = new TablesDB(client)
+
+
  
-export { client, account, databases, tableDB };
+export { client, account, databases, tableDB , storage};
 
 client.ping()
     .then(response => console.log("Appwrite is reachable:", response))

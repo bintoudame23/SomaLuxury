@@ -23,7 +23,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div className="fixed w-full z-50">
           <h1 className="h-10 bg-black text-white relative flex items-center justify-center">

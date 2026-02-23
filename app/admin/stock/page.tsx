@@ -56,19 +56,15 @@ export default function StockPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Stock</h1>
         <p className="text-gray-500">Suivi des niveaux de stock de vos produits.</p>
       </div>
-
-      {/* Statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Total Produits</CardTitle>
-            {/* <IconBoxes size={28} className="text-primary" /> */}
           </CardHeader>
           <CardContent className="text-3xl font-bold">
             {items.length}

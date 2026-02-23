@@ -51,17 +51,15 @@ const data = {
       items: [
   
         { title: "Overview", url: "/admin/dashboard", icon: IconDashboard },
-        { title: "Reports", url: "/admin/reports", icon: IconReportAnalytics },
       
       ],
     },
     {
       section: "E-Commerce",
       items: [
-        { title: "Produits", url: "/admin/produit", icon: IconListDetails },
+        { title: "Add New Product", url: "/admin/produit", icon: IconListDetails },
         { title: "Catégories", url: "/admin/categories", icon: IconFolder },
         { title: "Commandes", url: "/admin/commandes", icon: IconShoppingCart },
-        { title: "Stock", url: "/admin/stock", icon: IconTable },
         { title: "SupportContact", url: "/admin/support", icon: IconMessage },
       ],
     },
@@ -69,7 +67,6 @@ const data = {
       section: "Users",
       items: [
         { title: "Team", url: "/admin/team", icon: IconUsers },
-        { title: "Roles & Permissions", url: "/admin/roles", icon: IconTableAlias },
         { title: "AddEmploye", url: "/admin/addEmploye", icon: IconWorldSearch },
       ],
     },
@@ -77,7 +74,6 @@ const data = {
       section: "System",
       items: [
        
-        { title: "Tableau Manager", url: "/admin/tableau", icon: IconTableAlias },
         { title: "Settings", url: "/admin/settings", icon: IconSettings },
       ],
     },

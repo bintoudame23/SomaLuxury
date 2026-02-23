@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { IconPencil } from "@tabler/icons-react";
 import {
@@ -12,27 +14,40 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
-import { updateCategory as updateCategoryApi } from "@/lib/categorieClient";
+import { updateProduct } from "@/lib/addProductClient";
 
-interface Categorie {
+export interface Produit {
   $id: string;
-  newName: string;
+  nom_produit: string;
+  prix: number;
+  description: string;
+  quantite: number;
 }
-export function UpdateCategory({ categorie }: { categorie: Categorie }) {
+
+export function EditProduct({ produit }: { produit: Produit }) {
   const [name, setName] = useState("");
-    useEffect(() => {
-      setName(categorie?.newName || "");
-    }, [categorie]);
-      
+
+  useEffect(() => {
+    if (produit) {
+      setName(produit.nom_produit);
+    }
+  }, [produit]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
-      await updateCategoryApi(categorie.$id, name);
+      await updateProduct(produit.$id, {
+        nom_produit: name,
+      });
+
       alert("Modification effectuée avec succès !");
     } catch (error) {
-      console.log("Erreur lors de la mise à jour", error);
+      console.error("Erreur lors de la mise à jour :", error);
+      alert("Erreur lors de la modification");
     }
   };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -40,30 +55,33 @@ export function UpdateCategory({ categorie }: { categorie: Categorie }) {
           <IconPencil />
         </Button>
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Modification de la catégorie</DialogTitle>
+            <DialogTitle>Modifier le produit</DialogTitle>
           </DialogHeader>
+
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">New</Label>
+              <Label htmlFor="name">Nom du produit</Label>
               <Input
-                type="text"
                 id="name"
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                placeholder="Nom de la catégorie"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>
           </div>
+
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
                 Annuler
               </Button>
             </DialogClose>
+
             <Button type="submit">Sauvegarder</Button>
           </DialogFooter>
         </form>
@@ -71,19 +89,3 @@ export function UpdateCategory({ categorie }: { categorie: Categorie }) {
     </Dialog>
   );
 }
-
-// {
-//   compilationMode: 'annotation'
-// }
-
-// // Opt in stable components
-// function StableComponent() {
-//   "use memo";
-//   // Well-tested component
-// }
-
-// // Later, switch to infer mode and opt out problematic ones
-// function ProblematicComponent() {
-//   "use no memo"; // Fix issues before removing
-//   // ...
-// }
