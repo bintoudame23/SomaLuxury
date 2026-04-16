@@ -50,9 +50,9 @@ export default function PanierPage() {
     adresse: "",
     numero: "",
   });
-
   const [deliveryZone, setDeliveryZone] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const [orderPlaced, setOrderPlaced] = useState(false); 
 
   const zones = {
     "Zones Parcelles Assainies / Libertés": {
@@ -81,24 +81,27 @@ export default function PanierPage() {
     },
   };
 
-  /* ================= LOAD CART ================= */
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("cart");
-      if (saved) {
-        const parsed = JSON.parse(saved).map((item: any) => ({
-          ...item,
-          price: Number(item.price) || 0,
-          quantity: Number(item.quantity) || 1,
-        }));
-        setCart(parsed);
-      }
-    } catch (error) {
-      console.error("Erreur localStorage:", error);
+    const saved = localStorage.getItem("cart");
+    if (saved) {
+      const parsed = JSON.parse(saved).map((item: any) => ({
+        ...item,
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 1,
+      }));
+      setCart(parsed);
     }
   }, []);
 
-  /* ================= CART ACTIONS ================= */
+  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const total = subtotal + deliveryFee;
+
+  const handleZoneChange = (value: string) => {
+    setDeliveryZone(value);
+    const zone = Object.values(zones).find((z) => z.quartiers.includes(value));
+    setDeliveryFee(zone ? zone.tarif : 0);
+  };
+
   const updateCart = (updated: CartItem[]) => {
     setCart(updated);
     localStorage.setItem("cart", JSON.stringify(updated));
@@ -115,58 +118,64 @@ export default function PanierPage() {
     updateCart(cart.filter((item) => item.id !== id));
   };
 
-  /* ================= PRICES ================= */
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const total = subtotal + deliveryFee;
-
-  /* ================= ZONE ================= */
-  const handleZoneChange = (value: string) => {
-    setDeliveryZone(value);
-    const zone = Object.values(zones).find((z) => z.quartiers.includes(value));
-    setDeliveryFee(zone ? zone.tarif : 0);
-  };
-
-  /* ================= SUBMIT ================= */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (cart.length === 0) return alert("Votre panier est vide !");
+    if (!cart.length) return alert("Votre panier est vide !");
     if (!deliveryZone) return alert("Veuillez sélectionner votre quartier !");
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) return alert("Veuillez entrer un email valide.");
 
-    const produitsCommande = cart.map((item) => ({
-      nom_produit: item.name,
-      prix: item.price,
-      quantitePanier: item.quantity,
-    }));
+    const produitsCommande = JSON.stringify(
+      cart.map((item) => ({
+        id: item.id,
+        nom_produit: item.name,
+        prix: item.price,
+        quantite: item.quantity,
+      }))
+    );
 
     const Data = {
-      clientName: form.name,
+      clientName: `${form.prenom} ${form.name}`,
       clientEmail: form.email,
-      produits: produitsCommande,
       shippingAddresse: form.adresse,
       clientNumero: form.numero,
+      quartier: deliveryZone,
       fraisLivraison: deliveryFee,
-      listCommande: produitsCommande,
-      paymentStatus: "pending",
       total: total,
+      produits: produitsCommande,
+      paymentStatus: "pending",
       date: new Date().toISOString(),
     };
 
     try {
       await createCommande(Data);
       localStorage.removeItem("cart");
-      alert("✅ Commande envoyée avec succès !");
-      router.push("/boutique/recapitulatif");
+      setCart([]);
+      setOrderPlaced(true); 
     } catch (error) {
       console.error("Erreur création commande:", error);
       alert("❌ Erreur lors de l'envoi de la commande");
     }
   };
 
-  /* ================= UI ================= */
+  if (orderPlaced) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center bg-white py-20">
+        <h2 className="text-3xl font-bold text-green-600 mb-6">✅ Commande passée avec succès !</h2>
+        <p className="mb-6 text-gray-700">Merci pour votre commande. Vous pouvez revenir au dashboard pour continuer vos achats.</p>
+        <button
+          onClick={() => router.push("/boutique/dashboard")}
+          className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-md font-semibold"
+        >
+          Retour au Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  // ✅ Rendu panier normal
   return (
     <div className="min-h-screen bg-white text-black">
       <div className="max-w-5xl mx-auto py-10">
@@ -199,7 +208,6 @@ export default function PanierPage() {
                       <span>{item.quantity}</span>
                       <Button variant="outline" size="icon" onClick={() => handleQuantityChange(item.id, 1)}>+</Button>
                     </div>
-
                     <Button variant="destructive" onClick={() => handleRemoveFromCart(item.id)}>
                       Supprimer
                     </Button>
@@ -212,7 +220,6 @@ export default function PanierPage() {
                   <p className="font-bold text-lg text-pink-600">Total : {total.toLocaleString()} FCFA</p>
                 </div>
 
-    
                 <form onSubmit={handleSubmit} className="mt-8 space-y-4">
                   <div>
                     <Label>Quartier :</Label>
@@ -221,10 +228,10 @@ export default function PanierPage() {
                         <SelectValue placeholder="-- Sélectionnez --" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(zones).map(([zone, data]) => (
+                        {Object.entries(zones).map(([zone, data]: any) => (
                           <SelectGroup key={zone}>
                             <SelectLabel>{zone}</SelectLabel>
-                            {data.quartiers.map((q) => (
+                            {data.quartiers.map((q: string) => (
                               <SelectItem key={`${zone}-${q}`} value={q}>
                                 {q} ({data.tarif} FCFA)
                               </SelectItem>
@@ -256,7 +263,6 @@ export default function PanierPage() {
               </>
             )}
           </CardContent>
-
           <CardFooter />
         </Card>
       </div>

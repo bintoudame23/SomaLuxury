@@ -3,26 +3,18 @@
 import * as React from "react";
 import { Calendar } from "@/components/ui/calendar"
 import {
-  IconChartBar,
-  IconClipboardList,
   IconDashboard,
   IconFolder,
   IconInnerShadowTop,
   IconListDetails,
-  IconTable,
-  IconTableAlias,
-  IconTableColumn,
-  IconTableDashed,
-  IconTableDown,
-  IconTableExport,
   IconUsers,
   IconSettings,
   IconShoppingCart,
-  IconTrendingUp,
   IconReportAnalytics,
   IconWorldSearch,
   IconMessage,
-  IconCalendarWeek
+  IconInbox,
+  IconNotification
 
 } from "@tabler/icons-react";
 
@@ -61,15 +53,25 @@ const data = {
         { title: "Catégories", url: "/admin/categories", icon: IconFolder },
         { title: "Commandes", url: "/admin/commandes", icon: IconShoppingCart },
         { title: "SupportContact", url: "/admin/support", icon: IconMessage },
+        {title: "statistiques", url: "/admin/stats", icon: IconReportAnalytics},
       ],
     },
-    {
-      section: "Users",
-      items: [
-        { title: "Team", url: "/admin/team", icon: IconUsers },
-        { title: "AddEmploye", url: "/admin/addEmploye", icon: IconWorldSearch },
-      ],
-    },
+    // {
+    //   section: "Users",
+    //   items: [
+     
+    //     { title: "Team", url: "/admin/team", icon: IconUsers },
+    //     { title: "AddEmploye", url: "/admin/addEmploye", icon: IconWorldSearch },
+    //   ],
+    // },
+    //   {
+    //   section: "insights",
+    //   items: [
+       
+    //     { title: "inbox", url: "/admin/inbox", icon: IconInbox },
+    //     { title: "Notifications", url: "/admin/notifications", icon: IconNotification },
+    //   ],
+    // },
     {
       section: "System",
       items: [
@@ -77,6 +79,7 @@ const data = {
         { title: "Settings", url: "/admin/settings", icon: IconSettings },
       ],
     },
+    
   ],
 };
 

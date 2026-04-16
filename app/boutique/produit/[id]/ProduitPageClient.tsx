@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { fetchProduct } from "@/lib/addProductClient";
-import { FaHeart, FaRegHeart, FaExpand, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useCart } from "@/context/CartContext";
 
 interface Product {
   $id: string;
@@ -11,261 +13,235 @@ interface Product {
   description?: string;
   prix: number;
   images?: string[];
-  videos?: string[];
   quantite?: number;
   categorie?: string;
-  colors?: string[];
-  imagesByColor?: Record<string, string[]>;
+  couleur?: string[];
+  nouveau?: boolean;
 }
 
-interface Props {
-  produitId: string;
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+  selectedCouleur?: string[];
 }
 
 const mediaUrl = (id: string) =>
   `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_BUCKET_MEDIA_ID}/files/${id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
 
-const ProduitPageClient: React.FC<Props> = ({ produitId }) => {
+// Map pour convertir les noms de couleur Appwrite en code hex valide
+const colorMap: Record<string, string> = {
+  "Bleu ciel": "#87CEEB",
+  "Bleu": "#0000FF",
+  "Rouge": "#FF0000",
+  "Vert": "#00FF00",
+  "Jaune": "#FFFF00",
+  "Noir": "#000000",
+  "Blanc": "#FFFFFF",
+  "Gris": "#808080",
+  "Orange": "#FFA500",
+  "Rose": "#FFC0CB",
+};
+
+const ProduitPage = () => {
+  const params = useParams();
+  const router = useRouter();
+  const id = params?.id as string;
+
   const [product, setProduct] = useState<Product | null>(null);
-  const [mainMedia, setMainMedia] = useState<{ type: "image" | "video"; src: string } | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [selectedCouleur, setSelectedCouleur] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
-  const [cart, setCart] = useState<Product[]>([]);
-  const [favorites, setFavorites] = useState<Product[]>([]);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
-  const [mediaIndex, setMediaIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const isFavorite = product ? favorites.some((f) => f.$id === product.$id) : false;
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const { addToCart } = useCart();
 
-  // Charger produit depuis Appwrite
   useEffect(() => {
     const loadProduct = async () => {
-      const products: Product[] = await fetchProduct();
-      const p = products.find((pr) => pr.$id === produitId);
-      if (p) {
-        setProduct(p);
-        setMainMedia({ type: "image", src: p.images?.[0] ? mediaUrl(p.images[0]) : "/default.jpg" });
+      setLoading(true);
+      try {
+        const productsRaw = await fetchProduct();
+        const products: Product[] = (productsRaw as any[]).map((p) => ({
+          $id: p.$id,
+          nom_produit: p.nom_produit ?? "Produit inconnu",
+          description: p.description ?? "",
+          prix: p.prix ?? 0,
+          images: p.images ?? [],
+          quantite: p.quantite ?? 0,
+          categorie: p.categorie ?? "",
+          couleur: Array.isArray(p.couleur) ? p.couleur : [],
+          nouveau: p.nouveau ?? false,
+        }));
 
-        // Produits similaires
-        const similars = products.filter(
-          (sp) => sp.$id !== p.$id && sp.categorie === p.categorie
-        );
-        setSimilarProducts(similars.slice(0, 4));
+        const p = products.find((pr) => pr.$id === id);
+
+        if (p) {
+          setProduct(p);
+          if (p.images?.length) setSelectedImage(mediaUrl(p.images[0]));
+          setSimilarProducts(
+            products.filter((prod) => prod.categorie === p.categorie && prod.$id !== p.$id)
+          );
+        } else {
+          setProduct(null);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement du produit :", error);
+        setProduct(null);
+      } finally {
+        setLoading(false);
       }
     };
-    loadProduct();
-  }, [produitId]);
 
-  // Gestion des favoris
-  const toggleFavorite = () => {
-    if (!product) return;
-    const already = favorites.some((f) => f.$id === product.$id);
-    if (already) setFavorites(favorites.filter((f) => f.$id !== product.$id));
-    else setFavorites([...favorites, product]);
-  };
+    if (id) loadProduct();
+  }, [id]);
 
-  // Ajouter au panier
-  const handleAddToCart = () => {
-    if (!product) return;
-    if (!selectedColor && product.colors?.length) return alert("Sélectionne une couleur !");
-    const existing = cart.find(
-      (p) => p.$id === product.$id && p.colors?.includes(selectedColor || "")
+  const toggleColor = (couleur: string) => {
+    setSelectedCouleur((prev) =>
+      prev.includes(couleur) ? prev.filter((c) => c !== couleur) : [...prev, couleur]
     );
-    if (existing) {
-      setCart(
-        cart.map((p) =>
-          p.$id === product.$id && p.colors?.includes(selectedColor || "")
-            ? { ...p, quantite: (p.quantite || 1) + quantity }
-            : p
-        )
-      );
-    } else {
-      setCart([...cart, { ...product, quantite: quantity }]);
-    }
-    alert(`${product.nom_produit}${selectedColor ? " (" + selectedColor + ")" : ""} ajouté au panier !`);
   };
 
-  // Médias (images + vidéos)
-  const allMedia = () => {
-    if (!product) return [];
-    const images =
-      selectedColor && product.imagesByColor?.[selectedColor]
-        ? product.imagesByColor[selectedColor]
-        : product.images || [];
-    const videos = product.videos || [];
-    return [
-      ...images.map((s) => ({ type: "image" as const, src: mediaUrl(s) })),
-      ...videos.map((s) => ({ type: "video" as const, src: mediaUrl(s) })),
-    ];
-  };
+  if (loading)
+    return <div className="p-10 text-center text-gray-500 text-lg">Chargement...</div>;
+  if (!product)
+    return <div className="p-10 text-center text-red-500 text-lg">Produit introuvable.</div>;
 
-  const handlePrevMedia = () => {
-    const media = allMedia();
-    if (!media.length) return;
-    const prev = (mediaIndex - 1 + media.length) % media.length;
-    setMediaIndex(prev);
-    setMainMedia(media[prev]);
-  };
-
-  const handleNextMedia = () => {
-    const media = allMedia();
-    if (!media.length) return;
-    const next = (mediaIndex + 1) % media.length;
-    setMediaIndex(next);
-    setMainMedia(media[next]);
-  };
-
-  const handleColorSelect = (color: string) => {
-    setSelectedColor(color);
-    setMediaIndex(0);
-    if (product?.imagesByColor?.[color]?.length) {
-      setMainMedia({ type: "image", src: mediaUrl(product.imagesByColor[color][0]) });
-    } else if (product?.images?.length) {
-      setMainMedia({ type: "image", src: mediaUrl(product.images[0]) });
-    }
-  };
-
-  const handleZoom = () => {
-    if (mainMedia) window.open(mainMedia.src, "_blank");
-  };
-
-  if (!product) return <div className="text-center p-10 text-lg">Chargement...</div>;
+  const couleursArray = Array.isArray(product.couleur) ? product.couleur : [];
 
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-10">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+    <div className="max-w-7xl mx-auto px-6 py-16 space-y-16">
 
-        {/* MEDIA */}
-        <div className="flex flex-col gap-4 relative">
-          <button
-            onClick={toggleFavorite}
-            className="absolute right-4 top-4 z-20 bg-white/80 p-2 rounded-full shadow hover:scale-110 transition"
-          >
-            {isFavorite ? <FaHeart className="text-red-600" /> : <FaRegHeart className="text-gray-600" />}
-          </button>
-
-          <div
-            className="bg-gray-100 rounded-2xl p-4 flex items-center justify-center relative cursor-pointer"
-            onClick={handleZoom}
-          >
-            {mainMedia?.type === "image" ? (
-              <img src={mainMedia.src} alt={product.nom_produit} className="w-full h-96 object-contain rounded-xl" />
-            ) : (
-              <video src={mainMedia.src} controls className="w-full h-80 object-contain rounded-xl shadow-md" />
-            )}
-            <button
-              onClick={handlePrevMedia}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full hover:bg-pink-600 hover:text-white transition"
-            >
-              <FaChevronLeft />
-            </button>
-            <button
-              onClick={handleNextMedia}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full hover:bg-pink-600 hover:text-white transition"
-            >
-              <FaChevronRight />
-            </button>
-            <button
-              onClick={handleZoom}
-              className="absolute bottom-2 right-2 bg-white/70 p-2 rounded-full hover:bg-pink-600 hover:text-white transition"
-            >
-              <FaExpand />
-            </button>
-          </div>
-
-          <div className="flex gap-3 overflow-x-auto mt-2">
-            {allMedia().map((m, idx) => (
-              <div key={idx}>
-                {m.type === "image" ? (
-                  <img
-                    src={m.src}
-                    className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
-                      mainMedia?.src === m.src ? "border-pink-600 scale-110" : "border-gray-300"
-                    }`}
-                    onClick={() => {
-                      setMainMedia(m);
-                      setMediaIndex(idx);
-                    }}
-                  />
-                ) : (
-                  <video
-                    src={m.src}
-                    className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
-                      mainMedia?.src === m.src ? "border-pink-600 scale-110" : "border-gray-300"
-                    }`}
-                    onClick={() => {
-                      setMainMedia(m);
-                      setMediaIndex(idx);
-                    }}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* INFOS PRODUIT */}
-        <div className="flex flex-col justify-start gap-6">
+      {/* PRODUIT DETAIL */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+        {/* LEFT SIDE */}
+        <div className="space-y-6">
+          <p className="text-sm text-gray-400 uppercase tracking-wide">{product.categorie}</p>
           <h1 className="text-4xl font-bold">{product.nom_produit}</h1>
-          <p className="text-gray-700 text-lg leading-relaxed">{product.description}</p>
-          <div className="text-3xl font-bold text-green-700">{product.prix.toLocaleString()} FCFA</div>
-          <p className="text-sm text-gray-500">Catégorie : {product.categorie ?? "Non définie"}</p>
+          <p className="text-2xl font-semibold text-gray-800">{product.prix.toLocaleString()} FCFA</p>
+          {product.nouveau && <span className="inline-block bg-pink-100 text-pink-600 px-2 py-1 rounded-full text-xs font-semibold">Nouveau</span>}
+          <p className="text-gray-600 mt-2">{product.description}</p>
 
-          {/* Couleurs */}
-          {product.colors && (
-            <div>
-              <p className="font-semibold mb-2">Couleur :</p>
-              <div className="flex gap-3">
-                {product.colors.map((color) => (
-                  <button
-                    key={color}
-                    style={{ backgroundColor: color }}
-                    className={`h-8 w-8 rounded-full border-2 transition hover:scale-110 ${
-                      selectedColor === color ? "border-black scale-110" : "border-gray-300"
-                    }`}
-                    onClick={() => handleColorSelect(color)}
-                  />
-                ))}
+          {/* CARACTERISTIQUES */}
+          <div className="mt-4 space-y-2">
+            {couleursArray.length > 0 && (
+              <p className="text-gray-700">
+                <span className="font-semibold">Couleur sélectionnée :</span>{" "}
+                {selectedCouleur.length > 0 ? selectedCouleur.join(", ") : "Aucune sélection"}
+              </p>
+            )}
+            {product.quantite !== undefined && (
+              <p className="text-gray-700">
+                <span className="font-semibold">Quantité disponible :</span> {product.quantite}
+              </p>
+            )}
+          </div>
+
+          {/* Couleurs à sélectionner */}
+          {couleursArray.length > 0 && (
+            <div className="mt-4">
+              <p className="font-medium mb-2">Choisir une couleur</p>
+              <div className="flex gap-3 flex-wrap">
+                {couleursArray.map((couleur) => {
+                  const bgColor = colorMap[couleur] || "#ccc"; 
+                  return (
+                    <button
+                      key={couleur}
+                      onClick={() => toggleColor(couleur)}
+                      style={{ backgroundColor: bgColor }}
+                      className={`w-10 h-10 rounded-full border-2 cursor-pointer transition-all ${
+                        selectedCouleur.includes(couleur)
+                          ? "ring-2 ring-offset-2 ring-black"
+                          : "border-gray-300"
+                      }`}
+                      title={couleur}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
 
-          <p className="text-sm text-red-600 font-semibold">
-            🔥 Stock restant : <span className="font-bold">{product.quantite}</span>
-          </p>
-
-          {/* Quantité */}
-          <div className="flex items-center gap-3 mt-4">
-            <button onClick={() => quantity > 1 && setQuantity(quantity - 1)} className="border px-3 py-1 rounded text-xl">-</button>
-            <span className="text-xl font-semibold">{quantity}</span>
-            <button onClick={() => setQuantity(quantity + 1)} className="border px-3 py-1 rounded text-xl">+</button>
+          <div className="flex items-center gap-4 mt-4">
+            <button onClick={() => quantity > 1 && setQuantity(quantity - 1)} className="px-4 py-2 border rounded hover:bg-gray-100 transition">-</button>
+            <span className="text-lg">{quantity}</span>
+            <button onClick={() => setQuantity(quantity + 1)} className="px-4 py-2 border rounded hover:bg-gray-100 transition">+</button>
           </div>
-
-          {/* Ajouter au panier */}
           <button
-            onClick={handleAddToCart}
-            className="mt-4 bg-pink-600 text-white font-semibold py-3 px-6 rounded-full hover:bg-pink-700 transition w-fit"
+            onClick={() => {
+              if (couleursArray.length > 0 && selectedCouleur.length === 0) {
+                alert("Veuillez sélectionner au moins une couleur.");
+                return;
+              }
+              const item: CartItem = {
+                id: product.$id,
+                name: product.nom_produit,
+                price: product.prix,
+                image: selectedImage,
+                quantity,
+                selectedCouleur: selectedCouleur.length > 0 ? selectedCouleur : undefined,
+              };
+              addToCart(item);
+              alert(
+                `${product.nom_produit} ajouté au panier${
+                  selectedCouleur.length > 0 ? " (" + selectedCouleur.join(", ") + ")" : ""
+                }`
+              );
+            }}
+            className="w-full bg-gray-800 text-white py-3 rounded-full mt-6 hover:bg-gray-700 transition"
           >
             Ajouter au panier
           </button>
         </div>
-      </div>
 
-      {/* Produits similaires */}
+  
+        <div className="relative">
+          <button
+            onClick={() =>
+              toggleFavorite({ id: product.$id, name: product.nom_produit, image: selectedImage, price: product.prix })
+            }
+            className="absolute top-4 right-4 text-pink-600 text-2xl z-10"
+          >
+            {isFavorite(product.$id) ? <FaHeart /> : <FaRegHeart />}
+          </button>
+
+          <div className="bg-gray-100 p-6 rounded-2xl flex justify-center items-center hover:scale-105 transition-transform">
+            <img src={selectedImage || "/default.jpg"} alt={product.nom_produit} className="w-full max-h-[400px] object-contain" />
+          </div>
+          <div className="flex gap-4 mt-6 flex-wrap">
+            {product.images?.map((img) => (
+              <img
+                key={img}
+                src={mediaUrl(img)}
+                onClick={() => setSelectedImage(mediaUrl(img))}
+                className={`w-20 h-20 object-cover cursor-pointer rounded-lg border-2 transition-all ${
+                  selectedImage === mediaUrl(img) ? "border-black" : "border-gray-300 hover:border-black"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
       {similarProducts.length > 0 && (
         <div>
           <h2 className="text-2xl font-bold mb-6">Produits similaires</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {similarProducts.map((prod) => (
-              <Link key={prod.$id} href={`/boutique/produit/${prod.$id}`}>
-                <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden cursor-pointer">
-                  <img src={prod.images?.[0] ? mediaUrl(prod.images[0]) : "/default.jpg"} className="w-full h-48 object-cover" />
-                  <div className="p-4">
-                    <h3 className="font-semibold">{prod.nom_produit}</h3>
-                    <p className="text-green-700 font-bold">{prod.prix.toLocaleString()} FCFA</p>
-                  </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {similarProducts.map((p) => (
+              <div
+                key={p.$id}
+                onClick={() => router.push(`/boutique/produit/${p.$id}`)}
+                className="border p-4 rounded-lg hover:shadow-lg transition cursor-pointer group"
+              >
+                <div className="relative">
+                  <img src={p.images?.[0] ? mediaUrl(p.images[0]) : "/default.jpg"} alt={p.nom_produit} className="w-full h-40 object-cover rounded-md mb-2 group-hover:scale-105 transition-transform" />
+                  {p.nouveau && <span className="absolute top-2 left-2 bg-pink-100 text-pink-600 text-xs px-2 py-1 rounded-full font-semibold">Nouveau</span>}
                 </div>
-              </Link>
+                <h3 className="font-semibold">{p.nom_produit}</h3>
+                <p className="text-gray-600 font-bold">{p.prix.toLocaleString()} FCFA</p>
+              </div>
             ))}
           </div>
         </div>
@@ -274,4 +250,4 @@ const ProduitPageClient: React.FC<Props> = ({ produitId }) => {
   );
 };
 
-export default ProduitPageClient;
+export default ProduitPage;

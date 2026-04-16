@@ -15,7 +15,9 @@ interface Category {
 }
 
 export default function ProduitDetailPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+
   const router = useRouter();
 
   const [produit, setProduit] = useState<any>(null);
@@ -35,17 +37,13 @@ export default function ProduitDetailPage() {
   const [subCategories, setSubCategories] = useState<string[]>([]);
   const [imageModal, setImageModal] = useState<string | null>(null);
 
-  // -----------------------------
-  // Charger catégories
-  // -----------------------------
   useEffect(() => {
     fetchCategories().then(setCategories);
   }, []);
 
-  // -----------------------------
-  // Charger produit
-  // -----------------------------
   useEffect(() => {
+    if (!id) return;
+
     fetchProduct().then((res) => {
       const p = res.find((p: any) => p.$id === id);
       setProduit(p);
@@ -58,67 +56,62 @@ export default function ProduitDetailPage() {
           quantite: p.quantite ?? 0,
           couleur: p.couleur ?? "",
           categorie: p.categorie ?? "",
-          subCategorie: p.subCategorie ?? "",
+          subCategorie: p.subCategorie?.[0] ?? "",
         });
       }
     });
   }, [id]);
 
- useEffect(() => {
-  if (!form.categorie) {
-    setSubCategories([]);
-    return;
-  }
+  useEffect(() => {
+    if (!form.categorie) {
+      setSubCategories([]);
+      return;
+    }
 
-  const selected = categories.find(
-    (c) => c.nom_categorie === form.categorie
-  );
+    const selected = categories.find(
+      (c) => c.nom_categorie === form.categorie
+    );
 
-  setSubCategories(selected?.subCategories ?? []);
-}, [form.categorie]); // ✅ dépendance stable
-
+    setSubCategories(selected?.subCategories ?? []);
+  }, [form.categorie, categories]);
 
   if (!produit)
     return <div className="p-6 text-center text-gray-500 text-lg">Chargement...</div>;
 
-  // -----------------------------
-  // SUPPRIMER
-  // -----------------------------
   const handleDelete = async () => {
+    if (!id) return;
     if (!confirm("Voulez-vous vraiment supprimer ce produit ?")) return;
-    await deleteProduct(id!);
+
+    await deleteProduct(id);
     alert("Produit supprimé !");
     router.push("/admin/produit");
   };
 
- const handleSave = async () => {
-  await updateProduct(id!, {
-    nom_produit: form.nom,
-    description: form.description,
-    prix: Number(form.prix),
-    quantite: Number(form.quantite),
-    couleur: form.couleur,
-    categorie: form.categorie,
-    subCategorie: form.subCategorie ? [form.subCategorie] : [], // ✅ FIX
-  });
+  const handleSave = async () => {
+    if (!id) return;
 
-  setProduit({
-    ...produit,
-    ...form,
-    subCategorie: form.subCategorie ? [form.subCategorie] : [],
-  });
+    await updateProduct(id, {
+      nom_produit: form.nom,
+      description: form.description,
+      prix: Number(form.prix),
+      quantite: Number(form.quantite),
+      couleur: form.couleur,
+      categorie: form.categorie,
+      subCategorie: form.subCategorie ? [form.subCategorie] : [],
+    });
 
-  setEditing(false);
-  alert("Produit mis à jour avec succès !");
-};
+    setProduit({
+      ...produit,
+      ...form,
+      subCategorie: form.subCategorie ? [form.subCategorie] : [],
+    });
 
+    setEditing(false);
+    alert("Produit mis à jour avec succès !");
+  };
 
-  // -----------------------------
-  // RENDER
-  // -----------------------------
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
-      {/* Retour */}
       <button
         onClick={() => router.back()}
         className="text-blue-600 underline hover:text-blue-800 transition"
@@ -175,9 +168,6 @@ export default function ProduitDetailPage() {
               </div>
             </>
           ) : (
-            // -----------------------------
-            // FORMULAIRE EDITION
-            // -----------------------------
             <div className="bg-white p-6 rounded-xl shadow space-y-4">
               <h2 className="text-2xl font-bold">Modifier le produit</h2>
 
@@ -206,7 +196,6 @@ export default function ProduitDetailPage() {
                 onChange={e => setForm({ ...form, couleur: e.target.value })}
               />
 
-              {/* Catégorie */}
               <select
                 className="input w-full"
                 value={form.categorie}
@@ -222,7 +211,6 @@ export default function ProduitDetailPage() {
                 ))}
               </select>
 
-              {/* Sous-catégorie */}
               {subCategories.length > 0 && (
                 <select
                   className="input w-full"
@@ -249,7 +237,6 @@ export default function ProduitDetailPage() {
         </div>
       </div>
 
-      {/* Modal image */}
       {imageModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center"
              onClick={() => setImageModal(null)}>

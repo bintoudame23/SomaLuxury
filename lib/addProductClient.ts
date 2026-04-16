@@ -7,14 +7,13 @@ const databaseId = process.env.NEXT_PUBLIC_DATABASE_ID!;
 const produitTableId = process.env.NEXT_PUBLIC_TABLE_PRODUIT_ID!;
 const queryLimit = 50;
 
+// 🔹 FETCH
 export const fetchProduct = async () => {
   try {
     const response = await databases.listDocuments(
       databaseId,
       produitTableId,
-      [
-        Query.limit(queryLimit)
-      ]
+      [Query.limit(queryLimit)]
     );
     return response.documents;
   } catch (error) {
@@ -25,18 +24,27 @@ export const fetchProduct = async () => {
 
 export const addProduct = async (produitData: any) => {
   try {
-    // On ne crée que les attributs qui existent dans le schéma
     const allowedData: any = {
       nom_produit: produitData.nom_produit,
       description: produitData.description,
       prix: produitData.prix,
       quantite: produitData.quantite,
-      couleur: produitData.couleur,
+
+      // ✅ FIX ICI : toujours un tableau
+      couleur: Array.isArray(produitData.couleur)
+        ? produitData.couleur
+        : produitData.couleur
+        ? [produitData.couleur]
+        : [],
+
       categorie: produitData.categorie,
       images: produitData.images || [],
       videos: produitData.videos || [],
     };
-    if (produitData.subCategorie) allowedData.subCategorie = produitData.subCategorie;
+
+    if (produitData.subCategorie) {
+      allowedData.subCategorie = produitData.subCategorie;
+    }
 
     const response = await databases.createDocument(
       databaseId,
@@ -44,6 +52,7 @@ export const addProduct = async (produitData: any) => {
       ID.unique(),
       allowedData
     );
+
     console.log("Produit ajouté avec succès!", response);
     return response;
   } catch (error) {
@@ -59,14 +68,29 @@ export const updateProduct = async (rowId: string, data: any) => {
       description: data.description,
       prix: data.prix,
       quantite: data.quantite,
-      couleur: data.couleur,
+
+      couleur: Array.isArray(data.couleur)
+        ? data.couleur
+        : data.couleur
+        ? [data.couleur]
+        : [],
+
       categorie: data.categorie,
       images: data.images || [],
       videos: data.videos || [],
     };
-    if (data.subCategorie) allowedData.subCategorie = data.subCategorie;
 
-    const response = await databases.updateDocument(databaseId, produitTableId, rowId, allowedData);
+    if (data.subCategorie) {
+      allowedData.subCategorie = data.subCategorie;
+    }
+
+    const response = await databases.updateDocument(
+      databaseId,
+      produitTableId,
+      rowId,
+      allowedData
+    );
+
     return response;
   } catch (error) {
     console.error("Update Product Error:", error);
@@ -86,7 +110,11 @@ export const deleteProduct = async (rowId: string) => {
 
 export const getProductById = async (id: string) => {
   try {
-    const product = await databases.getDocument(databaseId, produitTableId, id);
+    const product = await databases.getDocument(
+      databaseId,
+      produitTableId,
+      id
+    );
     return product;
   } catch (error) {
     console.error("Erreur récupération produit :", error);

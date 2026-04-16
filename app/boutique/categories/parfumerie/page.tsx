@@ -23,11 +23,17 @@ const Parfumerie: React.FC = () => {
 
   const [produits, setProduits] = useState<Produit[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<"default" | "priceAsc" | "priceDesc" | "alpha">("default");
+
+  const [filter, setFilter] = useState<
+    "default" | "priceAsc" | "priceDesc" | "alpha"
+  >("default");
+
   const [subCategoryFilter, setSubCategoryFilter] = useState<string>("all");
+  const [availableSubCategories, setAvailableSubCategories] = useState<
+    string[]
+  >([]);
 
-  const subCategories = ["parfum femme", "parfum homme", "bougies parfumée"];
-
+  /* ================= FETCH PRODUITS ================= */
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -49,6 +55,14 @@ const Parfumerie: React.FC = () => {
           }));
 
         setProduits(formatted);
+
+        /* EXTRAIRE LES SOUS CATEGORIES */
+
+        const allSubCategories = Array.from(
+          new Set(formatted.flatMap((p) => p.subCategorie || []))
+        );
+
+        setAvailableSubCategories(allSubCategories);
       } catch (err) {
         console.error("Erreur chargement parfumerie :", err);
       }
@@ -57,22 +71,31 @@ const Parfumerie: React.FC = () => {
     loadProducts();
   }, []);
 
+  /* ================= FILTRAGE ================= */
+
   const produitsFiltres = produits
     .filter((p) => {
-      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = p.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
       const matchesSub =
         subCategoryFilter === "all" ||
         p.subCategorie?.some((sc) => sc === subCategoryFilter);
+
       return matchesSearch && matchesSub;
     })
     .sort((a, b) => {
       switch (filter) {
         case "priceAsc":
           return a.price - b.price;
+
         case "priceDesc":
           return b.price - a.price;
+
         case "alpha":
           return a.name.localeCompare(b.name);
+
         default:
           return 0;
       }
@@ -80,6 +103,7 @@ const Parfumerie: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+   
       <section className="bg-black text-white py-20 text-center">
         <h1 className="text-5xl font-extrabold mb-4">Parfumerie</h1>
         <p className="text-lg opacity-90">
@@ -88,6 +112,7 @@ const Parfumerie: React.FC = () => {
       </section>
 
       <main className="max-w-7xl mx-auto py-16 px-6">
+     
         <div className="max-w-md mx-auto mb-12">
           <input
             type="text"
@@ -99,7 +124,7 @@ const Parfumerie: React.FC = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* FILTRES */}
+    
           <aside className="w-full lg:w-64 bg-white rounded-2xl shadow-md p-6 flex-shrink-0">
             <h2 className="text-xl font-semibold mb-4">Sous-catégories</h2>
 
@@ -115,7 +140,7 @@ const Parfumerie: React.FC = () => {
                 Tous
               </button>
 
-              {subCategories.map((sc) => (
+              {availableSubCategories.map((sc) => (
                 <button
                   key={sc}
                   onClick={() => setSubCategoryFilter(sc)}
@@ -125,15 +150,13 @@ const Parfumerie: React.FC = () => {
                       : "hover:bg-pink-50"
                   }`}
                 >
-                  {sc
-                    .split(" ")
-                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                    .join(" ")}
+                  {sc.charAt(0).toUpperCase() + sc.slice(1)}
                 </button>
               ))}
             </div>
 
             <h2 className="text-xl font-semibold mb-4">Trier</h2>
+
             <div className="flex flex-col gap-3">
               {[
                 ["default", "Par défaut"],
@@ -156,7 +179,6 @@ const Parfumerie: React.FC = () => {
             </div>
           </aside>
 
-          {/* PRODUITS */}
           <section className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {produitsFiltres.length > 0 ? (
               produitsFiltres.map((p) => (
@@ -175,9 +197,9 @@ const Parfumerie: React.FC = () => {
                   <div className="p-5 flex flex-col items-center text-center flex-grow">
                     <h3 className="text-lg font-semibold mb-1">{p.name}</h3>
 
-                    <p className="text-sm text-gray-500 mb-2 line-clamp-2">
+                    {/* <p className="text-sm text-gray-500 mb-2 line-clamp-2">
                       {p.description || "Aucune description disponible."}
-                    </p>
+                    </p> */}
 
                     <p className="text-gray-800 font-bold mb-2">
                       {p.price.toLocaleString()} FCFA
@@ -186,12 +208,14 @@ const Parfumerie: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+
                         addToCart({
                           id: p.id,
                           name: p.name,
                           price: p.price,
                           image: p.image,
                         });
+
                         alert(`🛒 ${p.name} ajouté au panier !`);
                       }}
                       className="mt-auto bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-6 rounded-full transition cursor-pointer active:scale-95"
