@@ -21,13 +21,12 @@ export default function ContactSupportPage() {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Charger tous les messages depuis localStorage
+
   useEffect(() => {
     const stored = localStorage.getItem("messages");
     if (stored) setMessages(JSON.parse(stored));
   }, []);
 
-  // Envoyer un nouveau message
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -52,12 +51,12 @@ export default function ContactSupportPage() {
     setMessage("");
   };
 
-  // Messages ayant une réponse
+
   const repliedMessages = messages.filter((m) => m.reply);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
-      {/* --- Formulaire Contact --- */}
+     
       <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-2xl mb-10">
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
           Contactez-nous

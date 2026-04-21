@@ -4,7 +4,6 @@ import "./globals.css";
 import "remixicon/fonts/remixicon.css";
 import { CartProvider } from "@/context/CartContext";
 
-/* ===================== FONTS ===================== */
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -15,7 +14,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/* ===================== METADATA ===================== */
 export const metadata: Metadata = {
   title: "Soma Luxury",
   description: "Élégance & Raffinement",
