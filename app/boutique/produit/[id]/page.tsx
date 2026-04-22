@@ -1,11 +1,13 @@
 import ProduitPageClient from "./ProduitPageClient";
 
 interface ProduitPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function ProduitPage({ params }: ProduitPageProps) {
-  return <ProduitPageClient produitId={params.id} />;
-} 
+export default async function ProduitPage({ params }: ProduitPageProps) {
+  const { id } = await params; // ✅ IMPORTANT
+
+  return <ProduitPageClient produitId={id} />;
+}

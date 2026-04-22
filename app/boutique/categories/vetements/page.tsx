@@ -5,11 +5,12 @@ import Link from "next/link";
 import { fetchProduct } from "@/lib/addProductClient";
 import { useCart } from "@/context/CartContext";
 
+/* ✅ image obligatoire pour éviter erreur build */
 interface Produit {
   id: string;
   name: string;
   price: number;
-  image?: string;
+  image: string;
   description?: string;
   category?: string;
   subCategorie?: string[];
@@ -23,6 +24,7 @@ const Vetements: React.FC = () => {
 
   const [produits, setProduits] = useState<Produit[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+
   const [filter, setFilter] = useState<
     "default" | "priceAsc" | "priceDesc" | "alpha"
   >("default");
@@ -30,7 +32,7 @@ const Vetements: React.FC = () => {
   const [subCategoryFilter, setSubCategoryFilter] = useState<string>("all");
   const [availableSubCategories, setAvailableSubCategories] = useState<string[]>([]);
 
-  /* ================= LOAD PRODUCTS ================= */
+  /* ================= LOAD ================= */
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -43,8 +45,14 @@ const Vetements: React.FC = () => {
             name: p.nom_produit ?? "Produit sans nom",
             price: p.prix ?? 0,
             description: p.description ?? "",
-            image: p.images?.[0] ? mediaUrl(p.images[0]) : "/default.jpg",
+
+            /* ✅ toujours string */
+            image: p.images?.[0]
+              ? mediaUrl(p.images[0])
+              : "/default.jpg",
+
             category: p.categorie ?? "",
+
             subCategorie: (p.subCategorie || []).map((sc: string) =>
               sc.toLowerCase()
             ),
@@ -52,12 +60,11 @@ const Vetements: React.FC = () => {
 
         setProduits(formatted);
 
-        // 🔥 Sous-catégories uniques
-        const subs = new Set<string>();
-        formatted.forEach((p) =>
-          p.subCategorie?.forEach((sc) => subs.add(sc))
+        const subs = Array.from(
+          new Set(formatted.flatMap((p) => p.subCategorie || []))
         );
-        setAvailableSubCategories(Array.from(subs));
+
+        setAvailableSubCategories(subs);
       } catch (err) {
         console.error("Erreur chargement vêtements :", err);
       }
@@ -66,7 +73,7 @@ const Vetements: React.FC = () => {
     loadProducts();
   }, []);
 
-  /* ================= FILTER + SORT ================= */
+  /* ================= FILTER ================= */
   const produitsFiltres = produits
     .filter((p) => {
       const matchesSearch = p.name
@@ -92,9 +99,16 @@ const Vetements: React.FC = () => {
       }
     });
 
-  /* ================= UI ================= */
+  const filterOptions = [
+    ["default", "Par défaut"],
+    ["alpha", "A-Z"],
+    ["priceAsc", "Prix croissant"],
+    ["priceDesc", "Prix décroissant"],
+  ] as const;
+
   return (
     <div className="min-h-screen bg-gray-50">
+
       {/* HERO */}
       <section className="bg-black text-white py-20 text-center">
         <h1 className="text-5xl font-extrabold mb-4">Vêtements</h1>
@@ -104,6 +118,7 @@ const Vetements: React.FC = () => {
       </section>
 
       <main className="max-w-7xl mx-auto py-16 px-6">
+
         {/* SEARCH */}
         <div className="max-w-md mx-auto mb-12">
           <input
@@ -111,21 +126,23 @@ const Vetements: React.FC = () => {
             placeholder="Rechercher un vêtement..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-6 py-3 rounded-full border shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+            className="w-full px-6 py-3 rounded-full border shadow-sm focus:ring-2 focus:ring-pink-500"
           />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* FILTERS */}
+
+          {/* SIDEBAR */}
           <aside className="w-full lg:w-64 bg-white rounded-2xl shadow-md p-6">
+
             <h2 className="text-xl font-semibold mb-4">Sous-catégories</h2>
 
             <div className="flex flex-col gap-3 mb-6">
               <button
                 onClick={() => setSubCategoryFilter("all")}
-                className={`px-4 py-2 rounded-lg text-left transition ${
+                className={`px-4 py-2 rounded-lg ${
                   subCategoryFilter === "all"
-                    ? "bg-gray-800 text-white font-semibold"
+                    ? "bg-gray-800 text-white"
                     : "hover:bg-pink-50"
                 }`}
               >
@@ -136,9 +153,9 @@ const Vetements: React.FC = () => {
                 <button
                   key={sc}
                   onClick={() => setSubCategoryFilter(sc)}
-                  className={`px-4 py-2 rounded-lg text-left transition ${
+                  className={`px-4 py-2 rounded-lg ${
                     subCategoryFilter === sc
-                      ? "bg-gray-800 text-white font-semibold"
+                      ? "bg-gray-800 text-white"
                       : "hover:bg-pink-50"
                   }`}
                 >
@@ -148,19 +165,15 @@ const Vetements: React.FC = () => {
             </div>
 
             <h2 className="text-xl font-semibold mb-4">Trier</h2>
+
             <div className="flex flex-col gap-3">
-              {[
-                ["default", "Par défaut"],
-                ["alpha", "A-Z"],
-                ["priceAsc", "Prix croissant"],
-                ["priceDesc", "Prix décroissant"],
-              ].map(([key, label]) => (
+              {filterOptions.map(([key, label]) => (
                 <button
                   key={key}
-                  onClick={() => setFilter(key as any)}
-                  className={`px-4 py-2 rounded-lg text-left transition ${
+                  onClick={() => setFilter(key)}
+                  className={`px-4 py-2 rounded-lg ${
                     filter === key
-                      ? "bg-gray-800 text-white font-semibold"
+                      ? "bg-gray-800 text-white"
                       : "hover:bg-pink-50"
                   }`}
                 >
@@ -176,7 +189,7 @@ const Vetements: React.FC = () => {
               produitsFiltres.map((p) => (
                 <div
                   key={p.id}
-                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 overflow-hidden flex flex-col"
+                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition flex flex-col"
                 >
                   <Link href={`/boutique/produit/${p.id}`}>
                     <img
@@ -194,15 +207,17 @@ const Vetements: React.FC = () => {
                     </p>
 
                     <button
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation();
+
                         addToCart({
                           id: p.id,
                           name: p.name,
                           price: p.price,
-                          image: p.image,
-                        })
-                      }
-                      className="mt-auto bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-6 rounded-full transition active:scale-95"
+                          image: p.image, // ✅ safe
+                        });
+                      }}
+                      className="mt-auto bg-pink-600 hover:bg-pink-700 text-white py-2 px-6 rounded-full"
                     >
                       Ajouter au panier
                     </button>
@@ -210,7 +225,7 @@ const Vetements: React.FC = () => {
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 text-center mt-20 text-lg col-span-full">
+              <p className="text-gray-500 text-center mt-20 col-span-full">
                 Aucun produit trouvé pour "{searchTerm}".
               </p>
             )}

@@ -1,13 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 import { fetchProduct } from "@/lib/addProductClient";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/context/CartContext";
-
-// ✅ IMPORTANT : ne pas recréer CartItem avec quantity ici
 
 interface Product {
   $id: string;
@@ -21,27 +18,30 @@ interface Product {
   nouveau?: boolean;
 }
 
+interface ProduitPageClientProps {
+  produitId: string;
+}
+
 const mediaUrl = (id: string) =>
   `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_BUCKET_MEDIA_ID}/files/${id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
 
-// 🎨 Couleurs
 const colorMap: Record<string, string> = {
   "Bleu ciel": "#87CEEB",
-  "Bleu": "#0000FF",
-  "Rouge": "#FF0000",
-  "Vert": "#00FF00",
-  "Jaune": "#FFFF00",
-  "Noir": "#000000",
-  "Blanc": "#FFFFFF",
-  "Gris": "#808080",
-  "Orange": "#FFA500",
-  "Rose": "#FFC0CB",
+  Bleu: "#0000FF",
+  Rouge: "#FF0000",
+  Vert: "#00FF00",
+  Jaune: "#FFFF00",
+  Noir: "#000000",
+  Blanc: "#FFFFFF",
+  Gris: "#808080",
+  Orange: "#FFA500",
+  Rose: "#FFC0CB",
 };
 
-const ProduitPage = () => {
-  const params = useParams();
+const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
+  produitId,
+}) => {
   const router = useRouter();
-  const id = params?.id as string;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>("");
@@ -53,14 +53,14 @@ const ProduitPage = () => {
   const { toggleFavorite, isFavorite } = useFavorites();
   const { addToCart } = useCart();
 
-  // 🔥 LOAD PRODUIT
   useEffect(() => {
     const loadProduct = async () => {
       setLoading(true);
-      try {
-        const productsRaw = await fetchProduct();
 
-        const products: Product[] = (productsRaw as any[]).map((p) => ({
+      try {
+        const res = await fetchProduct();
+
+        const products: Product[] = res.map((p: any) => ({
           $id: p.$id,
           nom_produit: p.nom_produit ?? "Produit inconnu",
           description: p.description ?? "",
@@ -75,42 +75,42 @@ const ProduitPage = () => {
           nouveau: p.nouveau ?? false,
         }));
 
-        const found = products.find((pr) => pr.$id === id);
+        const found = products.find((p) => p.$id === produitId);
 
-        if (found) {
-          setProduct(found);
-
-          if (found.images?.length) {
-            setSelectedImage(mediaUrl(found.images[0]));
-          }
-
-          setSimilarProducts(
-            products.filter(
-              (prod) =>
-                prod.categorie === found.categorie &&
-                prod.$id !== found.$id
-            )
-          );
-        } else {
+        if (!found) {
           setProduct(null);
+          setLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error("Erreur produit :", error);
+
+        setProduct(found);
+
+        setSelectedImage(
+          found.images?.length ? mediaUrl(found.images[0]) : "/default.jpg"
+        );
+
+        setSimilarProducts(
+          products.filter(
+            (p) =>
+              p.categorie === found.categorie && p.$id !== found.$id
+          )
+        );
+      } catch (err) {
+        console.error("Erreur produit :", err);
         setProduct(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) loadProduct();
-  }, [id]);
+    if (produitId) loadProduct();
+  }, [produitId]);
 
-  // 🎨 SELECT COULEUR
-  const toggleColor = (couleur: string) => {
+  const toggleColor = (color: string) => {
     setSelectedCouleur((prev) =>
-      prev.includes(couleur)
-        ? prev.filter((c) => c !== couleur)
-        : [...prev, couleur]
+      prev.includes(color)
+        ? prev.filter((c) => c !== color)
+        : [...prev, color]
     );
   };
 
@@ -118,21 +118,23 @@ const ProduitPage = () => {
     return <div className="p-10 text-center">Chargement...</div>;
 
   if (!product)
-    return <div className="p-10 text-center text-red-500">Produit introuvable</div>;
+    return (
+      <div className="p-10 text-center text-red-500">
+        Produit introuvable
+      </div>
+    );
 
-  const couleursArray = product.couleur || [];
+  // ✅ FIX IMPORTANT TS ERROR
+  const couleursArray = product.couleur ?? [];
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-16 space-y-16">
 
-      {/* 🧾 PRODUIT */}
+      {/* PRODUIT */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
 
         {/* LEFT */}
         <div className="space-y-6">
-          <p className="text-sm text-gray-400 uppercase">
-            {product.categorie}
-          </p>
 
           <h1 className="text-4xl font-bold">
             {product.nom_produit}
@@ -142,14 +144,12 @@ const ProduitPage = () => {
             {product.prix.toLocaleString()} FCFA
           </p>
 
-          <p className="text-gray-600">
-            {product.description}
-          </p>
+          <p>{product.description}</p>
 
           {/* COULEURS */}
           {couleursArray.length > 0 && (
             <div>
-              <p className="font-medium mb-2">Choisir une couleur</p>
+              <p className="font-medium mb-2">Couleurs disponibles</p>
 
               <div className="flex gap-3 flex-wrap">
                 {couleursArray.map((c) => (
@@ -168,9 +168,13 @@ const ProduitPage = () => {
             </div>
           )}
 
-          {/* QUANTITÉ (UI seulement) */}
+          {/* QUANTITY */}
           <div className="flex gap-4 items-center">
-            <button onClick={() => quantity > 1 && setQuantity(quantity - 1)}>
+            <button
+              onClick={() =>
+                quantity > 1 && setQuantity(quantity - 1)
+              }
+            >
               -
             </button>
 
@@ -180,36 +184,29 @@ const ProduitPage = () => {
               +
             </button>
           </div>
-<button
-  onClick={() => {
-    if (couleursArray.length > 0 && selectedCouleur.length === 0) {
-      alert("Veuillez sélectionner une couleur");
-      return;
-    }
 
-    addToCart({
-      id: product.$id,
-      name: product.nom_produit,
-      price: product.prix,
-      image: selectedImage,
+          {/* ADD TO CART */}
+          <button
+            onClick={() => {
+              addToCart({
+                id: product.$id,
+                name: product.nom_produit,
+                price: product.prix,
+                image: selectedImage,
+              });
 
-      // ✅ OK maintenant car context supporte
-      selectedCouleur:
-        selectedCouleur.length > 0 ? selectedCouleur : undefined,
-    });
-
-    alert("Produit ajouté au panier");
-  }}
-  className="w-full bg-gray-800 text-white py-3 rounded-full"
->
-  Ajouter au panier
-</button>
+              alert("Produit ajouté au panier");
+            }}
+            className="w-full bg-gray-800 text-white py-3 rounded-full"
+          >
+            Ajouter au panier
+          </button>
         </div>
 
         {/* RIGHT */}
         <div>
           <img
-            src={selectedImage || "/default.jpg"}
+            src={selectedImage}
             className="w-full h-[400px] object-contain"
           />
 
@@ -226,7 +223,7 @@ const ProduitPage = () => {
         </div>
       </div>
 
-      {/* 🔥 SIMILAIRES */}
+      {/* SIMILAIRES */}
       {similarProducts.length > 0 && (
         <div>
           <h2 className="text-2xl font-bold mb-6">
@@ -250,7 +247,6 @@ const ProduitPage = () => {
                   }
                   className="h-40 w-full object-cover"
                 />
-
                 <p>{p.nom_produit}</p>
                 <p>{p.prix.toLocaleString()} FCFA</p>
               </div>
@@ -262,4 +258,4 @@ const ProduitPage = () => {
   );
 };
 
-export default ProduitPage;
+export default ProduitPageClient;
