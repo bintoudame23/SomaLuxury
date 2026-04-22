@@ -10,8 +10,7 @@ export async function GET(req: Request) {
     if (!q || q.trim() === "") {
       return NextResponse.json([]);
     }
-
-    // ✅ SAFE ENV (IMPORTANT pour éviter crash Netlify)
+    
     const databaseId = process.env.APPWRITE_DATABASE_ID;
     const collectionId = process.env.APPWRITE_PRODUCTS_COLLECTION_ID;
 

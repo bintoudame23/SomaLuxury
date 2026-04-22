@@ -1,17 +1,12 @@
-import { Client, Account, Databases, Storage, Query } from "node-appwrite";
+import { Client, Databases, Storage, Query } from "node-appwrite";
+
+const client = new Client();
 
 const endpoint = process.env.APPWRITE_ENDPOINT;
 const projectId = process.env.APPWRITE_PROJECT_ID;
 const apiKey = process.env.APPWRITE_API_KEY;
 
-// ⚠️ NE PAS CRASH LE BUILD
-if (!endpoint || !projectId || !apiKey) {
-  console.warn("⚠️ Appwrite env missing (server running in degraded mode)");
-}
-
-const client = new Client();
-
-// ⚠️ sécurisation (évite crash build)
+// ⚠️ sécurité build Netlify
 if (endpoint && projectId && apiKey) {
   client
     .setEndpoint(endpoint)
@@ -19,8 +14,6 @@ if (endpoint && projectId && apiKey) {
     .setKey(apiKey);
 }
 
-const account = new Account(client);
-const databases = new Databases(client);
-const storage = new Storage(client);
-
-export { client, account, databases, storage, Query };
+export const databases = new Databases(client);
+export const storage = new Storage(client);
+export { Query };
