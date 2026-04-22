@@ -11,19 +11,17 @@ export async function GET(req: Request) {
       return NextResponse.json([]);
     }
 
-    // ✅ sécurisation env (IMPORTANT pour Netlify)
-    const databaseId = process.env.NEXT_PUBLIC_DATABASE_ID;
-    const collectionId = process.env.NEXT_PUBLIC_TABLE_PRODUIT_ID;
+    // ✅ SAFE ENV (IMPORTANT pour éviter crash Netlify)
+    const databaseId = process.env.APPWRITE_DATABASE_ID;
+    const collectionId = process.env.APPWRITE_PRODUCTS_COLLECTION_ID;
 
     if (!databaseId || !collectionId) {
-      console.error("❌ Missing env variables DATABASE_ID or TABLE_PRODUIT_ID");
+      console.error("❌ Missing Appwrite env variables");
       return NextResponse.json([]);
     }
 
     const res = await databases.listDocuments(databaseId, collectionId, [
-      // ⚠️ adapte le champ selon ta base Appwrite
       Query.search("nom_produit", q),
-
       Query.limit(10),
     ]);
 
