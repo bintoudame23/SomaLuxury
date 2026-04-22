@@ -1,4 +1,4 @@
-import { Client, Databases, Storage, Query } from "node-appwrite";
+import { Client, Databases,Account, Storage, Query } from "node-appwrite";
 
 const client = new Client();
 
@@ -16,4 +16,5 @@ if (endpoint && projectId && apiKey) {
 
 export const databases = new Databases(client);
 export const storage = new Storage(client);
+export const account = new Account(client);
 export { Query };
