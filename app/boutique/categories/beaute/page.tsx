@@ -131,13 +131,12 @@ const Beaute: React.FC = () => {
                 >
                   {/* IMAGE + LINK */}
                   <Link href={`/boutique/produit/${p.id}`}>
-                    <div className="relative overflow-hidden">
+                    <div className="relative overflow-hidden cursor-pointer">
                       <img
-                        src={p.image}
+                        src={p.image ?? "/default.jpg"}
                         alt={p.name}
                         className="h-64 w-full object-cover group-hover:scale-110 transition duration-500"
                       />
-                      
                     </div>
                   </Link>
 
@@ -146,31 +145,29 @@ const Beaute: React.FC = () => {
                     <h3 className="font-semibold text-lg mb-2">
                       {p.name}
                     </h3>
-                    
+
                     <p className="text-lg font-bold mb-4">
                       {p.price.toLocaleString()} FCFA
                     </p>
 
-                <button
-  onClick={(e) => {
-    e.stopPropagation();
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
 
-    addToCart({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      image: p.image,
-    });
+                        addToCart({
+                          id: p.id,
+                          name: p.name,
+                          price: p.price,
+                          image: p.image ?? "/default.jpg",
+                        });
 
-    alert(`🛒 ${p.name} ajouté au panier !`);
-  }}
-  className="w-full bg-pink-600 hover:bg-pink-700 active:scale-95 
-             text-white py-2 rounded-full font-semibold transition
-             cursor-pointer"
->
-  Ajouter au panier
-</button>
-
+                        alert(`🛒 ${p.name} ajouté au panier !`);
+                      }}
+                      className="w-full bg-pink-600 hover:bg-pink-700 active:scale-95 
+                      text-white py-2 rounded-full font-semibold transition cursor-pointer"
+                    >
+                      Ajouter au panier
+                    </button>
                   </div>
                 </div>
               ))
