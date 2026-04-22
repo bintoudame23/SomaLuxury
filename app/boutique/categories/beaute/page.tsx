@@ -5,11 +5,12 @@ import Link from "next/link";
 import { fetchProduct } from "@/lib/addProductClient";
 import { useCart } from "@/context/CartContext";
 
+/* ✅ image obligatoire maintenant */
 interface Produit {
   id: string;
   name: string;
   price: number;
-  image?: string;
+  image: string;
   category?: string;
 }
 
@@ -41,6 +42,7 @@ const Beaute: React.FC = () => {
             id: p.$id,
             name: p.nom_produit ?? "Produit sans nom",
             price: p.prix ?? 0,
+            /* ✅ TOUJOURS une string */
             image: p.images?.[0]
               ? mediaUrl(p.images[0])
               : "/default.jpg",
@@ -73,6 +75,14 @@ const Beaute: React.FC = () => {
       break;
   }
 
+  /* ✅ typage propre */
+  const filterOptions = [
+    ["default", "Par défaut"],
+    ["alpha", "A → Z"],
+    ["priceAsc", "Prix croissant"],
+    ["priceDesc", "Prix décroissant"],
+  ] as const;
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -101,15 +111,10 @@ const Beaute: React.FC = () => {
 
             <h3 className="font-semibold mb-3">Trier par</h3>
 
-            {[
-              ["default", "Par défaut"],
-              ["alpha", "A → Z"],
-              ["priceAsc", "Prix croissant"],
-              ["priceDesc", "Prix décroissant"],
-            ].map(([key, label]) => (
+            {filterOptions.map(([key, label]) => (
               <button
                 key={key}
-                onClick={() => setFilter(key as any)}
+                onClick={() => setFilter(key)}
                 className={`w-full text-left px-4 py-2 rounded-lg mb-2 transition ${
                   filter === key
                     ? "bg-black text-white"
@@ -133,7 +138,7 @@ const Beaute: React.FC = () => {
                   <Link href={`/boutique/produit/${p.id}`}>
                     <div className="relative overflow-hidden cursor-pointer">
                       <img
-                        src={p.image ?? "/default.jpg"}
+                        src={p.image}
                         alt={p.name}
                         className="h-64 w-full object-cover group-hover:scale-110 transition duration-500"
                       />
@@ -158,7 +163,7 @@ const Beaute: React.FC = () => {
                           id: p.id,
                           name: p.name,
                           price: p.price,
-                          image: p.image ?? "/default.jpg",
+                          image: p.image, // ✅ toujours string maintenant
                         });
 
                         alert(`🛒 ${p.name} ajouté au panier !`);
