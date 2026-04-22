@@ -5,11 +5,12 @@ import Link from "next/link";
 import { fetchProduct } from "@/lib/addProductClient";
 import { useCart } from "@/context/CartContext";
 
+/* ✅ image OBLIGATOIRE */
 interface Produit {
   id: string;
   name: string;
   price: number;
-  image?: string;
+  image: string;
   category?: string;
 }
 
@@ -25,7 +26,7 @@ const Bijoux: React.FC = () => {
     "default" | "priceAsc" | "priceDesc" | "alpha"
   >("default");
 
-  /* ===================== FETCH APPWRITE ===================== */
+  /* ===================== FETCH ===================== */
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -41,6 +42,7 @@ const Bijoux: React.FC = () => {
             id: p.$id,
             name: p.nom_produit ?? "Produit sans nom",
             price: p.prix ?? 0,
+            /* ✅ TOUJOURS une string */
             image: p.images?.[0]
               ? mediaUrl(p.images[0])
               : "/default.jpg",
@@ -58,7 +60,7 @@ const Bijoux: React.FC = () => {
 
   /* ===================== FILTRAGE ===================== */
   let produitsFiltres = produitsBijoux.filter((p) =>
-    (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   switch (filter) {
@@ -73,9 +75,18 @@ const Bijoux: React.FC = () => {
       break;
   }
 
+  /* ✅ Typage clean */
+  const filterOptions = [
+    ["default", "Par défaut"],
+    ["alpha", "A-Z"],
+    ["priceAsc", "Prix croissant"],
+    ["priceDesc", "Prix décroissant"],
+  ] as const;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ===================== HERO ===================== */}
+
+      {/* HERO */}
       <section className="bg-black text-white py-20 text-center">
         <h1 className="text-5xl font-extrabold mb-4">
           Bijoux & Accessoires
@@ -87,7 +98,8 @@ const Bijoux: React.FC = () => {
 
       <main className="max-w-7xl mx-auto py-16 px-4 lg:px-6">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* ===================== FILTRES ===================== */}
+
+          {/* FILTRES */}
           <aside className="w-full lg:w-64 bg-white rounded-2xl shadow-md p-6">
             <input
               type="text"
@@ -100,15 +112,10 @@ const Bijoux: React.FC = () => {
             <h2 className="text-xl font-semibold mb-4">Trier</h2>
 
             <div className="flex flex-col gap-3">
-              {[
-                ["default", "Par défaut"],
-                ["alpha", "A-Z"],
-                ["priceAsc", "Prix croissant"],
-                ["priceDesc", "Prix décroissant"],
-              ].map(([key, label]) => (
+              {filterOptions.map(([key, label]) => (
                 <button
                   key={key}
-                  onClick={() => setFilter(key as any)}
+                  onClick={() => setFilter(key)}
                   className={`px-4 py-2 rounded-lg text-left transition ${
                     filter === key
                       ? "bg-gray-800 text-white"
@@ -121,7 +128,7 @@ const Bijoux: React.FC = () => {
             </div>
           </aside>
 
-          {/* ===================== PRODUITS ===================== */}
+          {/* PRODUITS */}
           <section className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {produitsFiltres.length > 0 ? (
               produitsFiltres.map((p) => (
@@ -147,17 +154,19 @@ const Bijoux: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+
                         addToCart({
                           id: p.id,
                           name: p.name,
                           price: p.price,
-                          image: p.image,
+                          image: p.image, // ✅ plus d'erreur
                         });
+
                         alert(`🛒 ${p.name} ajouté au panier !`);
                       }}
                       className="mt-auto w-full bg-pink-600 hover:bg-pink-700
-                                 text-white py-2 rounded-full font-semibold
-                                 transition cursor-pointer active:scale-95"
+                      text-white py-2 rounded-full font-semibold
+                      transition cursor-pointer active:scale-95"
                     >
                       Ajouter au panier
                     </button>
