@@ -1,20 +1,14 @@
-import { Client, Databases,Account, Storage, Query } from "node-appwrite";
+import { Client, Account, Databases, Storage, Query, ID } from "appwrite";
 
-const client = new Client();
+const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!;
+const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!;
 
-const endpoint = process.env.APPWRITE_ENDPOINT;
-const projectId = process.env.APPWRITE_PROJECT_ID;
-const apiKey = process.env.APPWRITE_API_KEY;
+export const client = new Client()
+  .setEndpoint(endpoint)
+  .setProject(projectId);
 
-// ⚠️ sécurité build Netlify
-if (endpoint && projectId && apiKey) {
-  client
-    .setEndpoint(endpoint)
-    .setProject(projectId)
-    .setKey(apiKey);
-}
-
+export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
-export const account = new Account(client);
-export { Query };
+
+export { Query, ID };
