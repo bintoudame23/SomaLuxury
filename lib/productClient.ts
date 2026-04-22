@@ -1,6 +1,6 @@
 "use client"
 import { ID, Query, type Models } from "appwrite";
-import { client, account, databases } from "@/lib/appwrite"; // import databases
+import { account, databases } from "@/lib/appwrite"; // import databases
 
 const databaseId = process.env.NEXT_PUBLIC_DATABASE_ID!;
 const produitTableId = process.env.NEXT_PUBLIC_TABLE_PRODUIT_ID!;
