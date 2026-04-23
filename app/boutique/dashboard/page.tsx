@@ -50,11 +50,11 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
 
-      {/* TITLE */}
+      {/* TITRE */}
       <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">
-        Nouveaux Produits
+        ✨ Nouveaux Produits
       </h2>
 
       {/* GRID RESPONSIVE */}
@@ -63,14 +63,22 @@ const Dashboard = () => {
         {produitsData.map((produit) => (
           <div
             key={produit.id}
-            className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden flex flex-col"
+            className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col"
           >
 
             {/* IMAGE + FAVORI */}
             <div className="relative">
 
+              <Link href={`/boutique/produit/${produit.id}`}>
+                <img
+                  src={produit.image}
+                  alt={produit.name}
+                  className="w-full h-36 sm:h-52 object-cover"
+                />
+              </Link>
+
+              {/* ❤️ Favori */}
               <button
-                className="absolute top-2 right-2 text-pink-600 text-lg sm:text-xl bg-white/80 rounded-full p-1"
                 onClick={(e) => {
                   e.stopPropagation();
 
@@ -81,56 +89,49 @@ const Dashboard = () => {
                     price: produit.price,
                   });
                 }}
+                className="absolute top-2 right-2 bg-white/90 p-2 rounded-full shadow"
               >
-                {isFavorite(produit.id) ? <FaHeart /> : <FaRegHeart />}
+                {isFavorite(produit.id) ? (
+                  <FaHeart className="text-pink-600" />
+                ) : (
+                  <FaRegHeart className="text-gray-600" />
+                )}
               </button>
-
-              <Link href={`/boutique/produit/${produit.id}`}>
-                <img
-                  src={produit.image}
-                  alt={produit.name}
-                  className="h-32 sm:h-48 lg:h-56 w-full object-cover"
-                />
-              </Link>
-
             </div>
 
             {/* CONTENT */}
             <div className="p-3 sm:p-4 flex flex-col flex-1">
 
-              <h3 className="font-semibold text-sm sm:text-base line-clamp-1">
-                {produit.name}
-              </h3>
+              <Link href={`/boutique/produit/${produit.id}`}>
+                <h3 className="font-semibold text-sm sm:text-base line-clamp-1">
+                  {produit.name}
+                </h3>
 
-              <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 mt-1">
-                {produit.description}
-              </p>
+                <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 mt-1">
+                  {produit.description}
+                </p>
 
-              <p className="font-bold mt-2 text-sm sm:text-base">
-                {produit.price.toLocaleString()} FCFA
-              </p>
+                <p className="font-bold mt-2 text-sm sm:text-base text-gray-900">
+                  {produit.price.toLocaleString()} FCFA
+                </p>
+              </Link>
 
               {/* BUTTON */}
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-
+                onClick={() =>
                   addToCart({
                     id: produit.id,
                     name: produit.name,
                     price: produit.price,
                     image: produit.image,
-                  });
-
-                  alert(`${produit.name} ajouté au panier`);
-                }}
-                className="mt-auto w-full bg-pink-600 hover:bg-pink-700 text-white py-2 sm:py-2.5 rounded-full text-xs sm:text-sm transition"
+                  })
+                }
+                className="mt-3 w-full bg-pink-600 text-white py-2 rounded-xl text-sm sm:text-base active:scale-95 transition"
               >
                 Ajouter au panier
               </button>
 
             </div>
-
           </div>
         ))}
 

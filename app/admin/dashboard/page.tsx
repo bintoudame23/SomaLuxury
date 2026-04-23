@@ -31,7 +31,7 @@ interface OverviewProps {
 
 export default function OverviewPage({ currentUser }: OverviewProps) {
   
-  const user = currentUser || { name:"fatu", avatar: "/default-avatar.png", totalOrders: 0 };
+  const user = currentUser || { name:"user", avatar: "/default-avatar.png", totalOrders: 0 };
 
   const kpiData = {
     totalSales: 0,
