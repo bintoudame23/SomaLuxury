@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -12,32 +13,58 @@ interface Admin {
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [adminUsers] = useState<Admin[]>(() => {
-    const stored = localStorage.getItem("adminUsers");
-    if (stored) return JSON.parse(stored) as Admin[];
-
-    const defaultAdmin: Admin[] = [
-      { id: 1, email: "fasylla2003@gmail.com", password: "bintou23" }
-    ];
-    localStorage.setItem("adminUsers", JSON.stringify(defaultAdmin));
-    return defaultAdmin;
-  });
-
+  const [adminUsers, setAdminUsers] = useState<Admin[]>([]);
   const [email, setEmail] = useState("fasylla2003@gmail.com");
   const [password, setPassword] = useState("bintou23");
+  const [loading, setLoading] = useState(true);
+
+  // ✅ FIX localStorage SAFE
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("adminUsers");
+
+      if (stored) {
+        setAdminUsers(JSON.parse(stored));
+      } else {
+        const defaultAdmin: Admin[] = [
+          { id: 1, email: "fasylla2003@gmail.com", password: "bintou23" },
+        ];
+
+        localStorage.setItem("adminUsers", JSON.stringify(defaultAdmin));
+        setAdminUsers(defaultAdmin);
+      }
+
+      setLoading(false);
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     const admin = adminUsers.find(
       (u) => u.email === email && u.password === password
     );
+
     if (!admin) {
       alert("Identifiants incorrects !");
       return;
     }
-    localStorage.setItem("currentAdmin", JSON.stringify(admin));
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("currentAdmin", JSON.stringify(admin));
+    }
+
     router.push("/admin/dashboard");
   };
+
+  // 🔥 éviter affichage avant chargement
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white bg-black">
+        Chargement...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 flex items-center justify-center p-4">
@@ -70,9 +97,7 @@ export default function AdminLoginPage() {
             type="email"
             placeholder="Adresse e-mail administrateur"
             value={email}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setEmail(e.target.value)
-            }
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full p-4 rounded-2xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
             required
           />
@@ -81,9 +106,7 @@ export default function AdminLoginPage() {
             type="password"
             placeholder="Mot de passe"
             value={password}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full p-4 rounded-2xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
             required
           />
@@ -96,9 +119,11 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        {/* Règles d'utilisation */}
+        {/* Règles */}
         <div className="mt-8 bg-black/30 p-6 rounded-2xl text-sm">
-          <h2 className="font-semibold mb-2 text-yellow-400">📘 Règles d'utilisation</h2>
+          <h2 className="font-semibold mb-2 text-yellow-400">
+            📘 Règles d'utilisation
+          </h2>
           <ul className="list-disc list-inside space-y-1 text-gray-300">
             <li>Identifiants hautement confidentiels.</li>
             <li>Utiliser un mot de passe complexe.</li>
