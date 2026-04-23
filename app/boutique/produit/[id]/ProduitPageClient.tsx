@@ -38,9 +38,7 @@ const colorMap: Record<string, string> = {
   Rose: "#FFC0CB",
 };
 
-const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
-  produitId,
-}) => {
+const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
   const router = useRouter();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -60,16 +58,26 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
       try {
         const res = await fetchProduct();
 
+        // 🔥 DEBUG IMPORTANT
+        console.log("DATA APPWRITE:", res);
+
+        // 🔥 SÉCURITÉ (évite crash)
+        if (!res || !Array.isArray(res)) {
+          console.error("❌ Données invalides :", res);
+          setProduct(null);
+          return;
+        }
+
         const products: Product[] = res.map((p: any) => ({
           $id: p.$id,
           nom_produit: p.nom_produit ?? "Produit inconnu",
           description: p.description ?? "",
-          prix: p.prix ?? 0,
-          images: p.images ?? [],
-          quantite: p.quantite ?? 0,
+          prix: Number(p.prix) || 0,
+          images: Array.isArray(p.images) ? p.images : [],
+          quantite: Number(p.quantite) || 0,
           categorie:
             typeof p.categorie === "object"
-              ? p.categorie.nom_categorie
+              ? p.categorie?.nom_categorie
               : p.categorie ?? "",
           couleur: Array.isArray(p.couleur) ? p.couleur : [],
           nouveau: p.nouveau ?? false,
@@ -78,8 +86,8 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
         const found = products.find((p) => p.$id === produitId);
 
         if (!found) {
+          console.warn("❌ Produit non trouvé avec ID :", produitId);
           setProduct(null);
-          setLoading(false);
           return;
         }
 
@@ -96,7 +104,7 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
           )
         );
       } catch (err) {
-        console.error("Erreur produit :", err);
+        console.error("❌ Erreur produit :", err);
         setProduct(null);
       } finally {
         setLoading(false);
@@ -115,7 +123,11 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
   };
 
   if (loading)
-    return <div className="p-10 text-center">Chargement...</div>;
+    return (
+      <div className="p-10 text-center text-gray-500">
+        Chargement...
+      </div>
+    );
 
   if (!product)
     return (
@@ -124,7 +136,6 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
       </div>
     );
 
-  // ✅ FIX IMPORTANT TS ERROR
   const couleursArray = product.couleur ?? [];
 
   return (
@@ -174,13 +185,17 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
               onClick={() =>
                 quantity > 1 && setQuantity(quantity - 1)
               }
+              className="px-3 py-1 border"
             >
               -
             </button>
 
             <span>{quantity}</span>
 
-            <button onClick={() => setQuantity(quantity + 1)}>
+            <button
+              onClick={() => setQuantity(quantity + 1)}
+              className="px-3 py-1 border"
+            >
               +
             </button>
           </div>
@@ -197,7 +212,7 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
 
               alert("Produit ajouté au panier");
             }}
-            className="w-full bg-gray-800 text-white py-3 rounded-full"
+            className="w-full bg-gray-800 text-white py-3 rounded-full hover:bg-gray-700 transition"
           >
             Ajouter au panier
           </button>
@@ -216,7 +231,7 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
                 key={img}
                 src={mediaUrl(img)}
                 onClick={() => setSelectedImage(mediaUrl(img))}
-                className="w-20 h-20 cursor-pointer"
+                className="w-20 h-20 cursor-pointer border hover:border-black"
               />
             ))}
           </div>
@@ -237,7 +252,7 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({
                 onClick={() =>
                   router.push(`/boutique/produit/${p.$id}`)
                 }
-                className="cursor-pointer"
+                className="cursor-pointer hover:scale-105 transition"
               >
                 <img
                   src={
