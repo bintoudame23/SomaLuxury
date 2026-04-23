@@ -38,14 +38,14 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
-    {
-      section: "Dashboard",
-      items: [
+    // {
+    //   section: "Dashboard",
+    //   items: [
   
-        { title: "Overview", url: "/admin/dashboard", icon: IconDashboard },
+    //     // { title: "Overview", url: "/admin/dashboard", icon: IconDashboard },
       
-      ],
-    },
+    //   ],
+    // },
     {
       section: "E-Commerce",
       items: [
