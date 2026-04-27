@@ -101,6 +101,10 @@ export default function Header() {
 
           {/* ICONS */}
           <div className="flex gap-3 items-center">
+              {/* 🔥 PROFIL AJOUTÉ */}
+            <button onClick={() => router.push("/boutique/profil")}>
+              👤
+            </button>
 
             <button onClick={() => router.push("/boutique/favoris")}>
               ❤️ {favorites.length}
@@ -114,10 +118,7 @@ export default function Header() {
               💬
             </button>
 
-            {/* 🔥 PROFIL AJOUTÉ */}
-            <button onClick={() => router.push("/components/login-form")}>
-              👤
-            </button>
+          
 
             {/* MOBILE MENU BUTTON */}
             <button
