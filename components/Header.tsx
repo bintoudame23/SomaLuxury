@@ -114,6 +114,11 @@ export default function Header() {
               💬
             </button>
 
+            {/* 🔥 PROFIL AJOUTÉ */}
+            <button onClick={() => router.push("/components/login-form")}>
+              👤
+            </button>
+
             {/* MOBILE MENU BUTTON */}
             <button
               className="md:hidden text-2xl"
@@ -138,6 +143,17 @@ export default function Header() {
                 {c.label}
               </Link>
             ))}
+
+            {/* 🔥 PROFIL MOBILE */}
+            <button
+              onClick={() => {
+                router.push("/boutique/profil");
+                setMenuOpen(false);
+              }}
+              className="block w-full text-left py-2 border-b"
+            >
+              👤 Profil
+            </button>
 
           </div>
         )}
