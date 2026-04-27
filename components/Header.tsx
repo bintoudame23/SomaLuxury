@@ -145,7 +145,7 @@ export default function Header() {
             ))}
 
             {/* 🔥 PROFIL MOBILE */}
-            <button
+            {/* <button
               onClick={() => {
                 router.push("/boutique/profil");
                 setMenuOpen(false);
@@ -153,7 +153,7 @@ export default function Header() {
               className="block w-full text-left py-2 border-b"
             >
               👤 Profil
-            </button>
+            </button> */}
 
           </div>
         )}
