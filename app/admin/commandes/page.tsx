@@ -14,7 +14,10 @@ import { useRouter } from "next/navigation";
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID!;
 const COLLECTION_ID = process.env.NEXT_PUBLIC_TABLE_COMMANDE_ID!;
-const HISTORY_COLLECTION = process.env.NEXT_PUBLIC_TABLE_HISTORIQUECOMMANDE_ID!;
+const HISTORY_COLLECTION =
+  process.env.NEXT_PUBLIC_TABLE_HISTORIQUECOMMANDE_ID!;
+
+/* ================= TYPES ================= */
 
 interface OrderProduct {
   nom_produit: string;
@@ -24,6 +27,7 @@ interface OrderProduct {
 
 interface Order {
   $id: string;
+  userId: string; // ✅ IMPORTANT (corrige ton erreur Appwrite)
   clientName: string;
   clientEmail: string;
   total: number;
@@ -32,12 +36,17 @@ interface Order {
   $createdAt: string;
 }
 
+/* ================= PAGE ================= */
+
 const CommandesAdminPage: React.FC = () => {
   const router = useRouter();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("");
+
+  /* ================= FETCH ORDERS ================= */
 
   const fetchOrders = async () => {
     try {
@@ -54,6 +63,7 @@ const CommandesAdminPage: React.FC = () => {
 
       const ordersData: Order[] = res.documents.map((doc: any) => ({
         $id: doc.$id,
+        userId: doc.userId, // ✅ indispensable
         clientName: doc.clientName || "Client inconnu",
         clientEmail: doc.clientEmail || "Email inconnu",
         total: Number(doc.total) || 0,
@@ -77,18 +87,24 @@ const CommandesAdminPage: React.FC = () => {
     fetchOrders();
   }, []);
 
+  /* ================= MARK AS PAID ================= */
+
   const markAsPaid = async (order: Order) => {
     try {
+      // 1. ARCHIVER DANS HISTORIQUE
       await databases.createDocument(
         DATABASE_ID,
         HISTORY_COLLECTION,
         "unique()",
         {
+          userId: order.userId, // ✅ FIX IMPORTANT
+          orderId: order.$id,
           total: order.total,
           date: new Date().toISOString(),
         }
       );
 
+      // 2. METTRE À JOUR LA COMMANDE
       await databases.updateDocument(
         DATABASE_ID,
         COLLECTION_ID,
@@ -98,12 +114,15 @@ const CommandesAdminPage: React.FC = () => {
         }
       );
 
+      // 3. RETIRER DE LA LISTE
       setOrders((prev) => prev.filter((o) => o.$id !== order.$id));
     } catch (err) {
       console.error("Erreur archivage :", err);
       alert("❌ Impossible de marquer comme payé");
     }
   };
+
+  /* ================= FILTRES ================= */
 
   const filteredOrders = orders.filter((order) => {
     const date = new Date(order.$createdAt);
@@ -119,6 +138,8 @@ const CommandesAdminPage: React.FC = () => {
 
     return matchesMonth && matchesDate;
   });
+
+  /* ================= UI ================= */
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -159,16 +180,19 @@ const CommandesAdminPage: React.FC = () => {
         </div>
       </div>
 
+      {/* LOADING */}
       {loading && <p>Chargement...</p>}
+
       {!loading && filteredOrders.length === 0 && (
         <p>Aucune commande trouvée.</p>
       )}
 
+      {/* LISTE */}
       <div className="space-y-6">
         {filteredOrders.map((order) => (
           <div
             key={order.$id}
-            className="border rounded-lg p-6 shadow-md space-y-4"
+            className="border rounded-lg p-6 shadow-md space-y-4 cursor-pointer"
             onClick={() => router.push(`/admin/commandes/${order.$id}`)}
           >
             <div className="flex justify-between">
@@ -180,6 +204,7 @@ const CommandesAdminPage: React.FC = () => {
 
             <p>👤 {order.clientName}</p>
             <p>📧 {order.clientEmail}</p>
+
             <p className="font-bold">
               💰 {order.total.toLocaleString()} FCFA
             </p>
