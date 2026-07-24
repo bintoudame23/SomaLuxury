@@ -4,40 +4,25 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
 import {
-  User,
-  ShieldCheck,
   Cog,
   Moon,
   Bell,
   Trash2,
   Smartphone,
-  Globe,
-  Key,
 } from "lucide-react";
-
-/**
- * SettingsPage
- *
- * Stocke les préférences dans localStorage sous la clé "admin_settings".
- * Stocke aussi le profil (nom/prenom/email/phone/avatar) sous "admin_profile".
- * Les produits/utilisateurs/commandes restent inchangés : cette page ne gère
- * que les réglages et le profil.
- */
 
 type Profile = {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  avatar?: string; // data URL
+
 };
 
 type Settings = {
@@ -60,15 +45,13 @@ export default function SettingsPage() {
     lastName: "Sylla",
     email: "fatou@example.com",
     phone: "77 123 45 67",
-    avatar: undefined,
   });
 
-  // Password fields (not persisted)
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Settings state
+
   const [settings, setSettings] = useState<Settings>({
     darkMode: false,
     language: "fr",
@@ -117,11 +100,11 @@ export default function SettingsPage() {
         root.classList.remove("dark");
       }
     } catch (e) {
-      // in SSR-less contexts or during tests, ignore
+
     }
   };
 
-  // Profile handlers
+
   const handleProfileChange = (field: keyof Profile, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
@@ -141,7 +124,6 @@ export default function SettingsPage() {
   };
 
   const handleSaveProfile = () => {
-    // basic validation
     if (!profile.firstName.trim() || !profile.lastName.trim()) {
       alert("Le nom et le prénom sont requis.");
       return;
@@ -169,15 +151,12 @@ export default function SettingsPage() {
       return;
     }
 
-    // Ici tu appellerais ton API pour changer le mot de passe.
-    // Nous faisons une simulation côté client :
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
     alert("Mot de passe mis à jour (simulation). Relie cette action à ton API pour le rendre réel.");
   };
 
-  // 2FA toggle (mock) — show confirm when enabling
   const handleToggle2FA = async (enable: boolean) => {
     if (enable) {
       const ok = confirm(
@@ -218,14 +197,11 @@ export default function SettingsPage() {
     try {
       localStorage.removeItem(PROFILE_KEY);
       localStorage.removeItem(SETTINGS_KEY);
-      // optionally clear other app data if needed:
-      // localStorage.removeItem("produits"); localStorage.removeItem("commandes"); etc.
     } catch (e) {
       console.error("Erreur purge localStorage", e);
     }
 
     alert("Compte supprimé localement. Tu vas être redirigé.");
-    // redirect to home or login
     router.push("/");
   };
 
@@ -235,131 +211,7 @@ export default function SettingsPage() {
         <Cog className="text-blue-600" /> Paramètres du compte
       </h1>
 
-      {/* ===== INFOS PERSONNELLES ===== */}
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="text-blue-600" /> Informations personnelles
-          </CardTitle>
-        </CardHeader>
 
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-6">
-            <div className="flex-shrink-0">
-              <Avatar className="h-24 w-24">
-                {profile.avatar ? (
-                  <AvatarImage src={profile.avatar} />
-                ) : (
-                  <AvatarFallback>{(profile.firstName || "U").charAt(0)}</AvatarFallback>
-                )}
-              </Avatar>
-            </div>
-
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Prénom</Label>
-                <Input
-                  value={profile.firstName}
-                  onChange={(e) => handleProfileChange("firstName", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>Nom</Label>
-                <Input
-                  value={profile.lastName}
-                  onChange={(e) => handleProfileChange("lastName", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => handleProfileChange("email", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>Téléphone</Label>
-                <Input
-                  value={profile.phone}
-                  onChange={(e) => handleProfileChange("phone", e.target.value)}
-                />
-              </div>
-
-              <div className="md:col-span-2 flex items-center gap-4">
-                <label className="cursor-pointer">
-                  <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" id="avatar-upload" />
-                  <div className="px-3 py-2 border rounded-md bg-white hover:bg-gray-50 cursor-pointer text-sm">
-                    Changer l'avatar
-                  </div>
-                </label>
-
-                <Button onClick={handleSaveProfile} className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Enregistrer le profil
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ===== SÉCURITÉ ===== */}
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="text-green-600" /> Sécurité et confidentialité
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {/* Password change */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label>Mot de passe actuel</Label>
-              <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-            </div>
-
-            <div>
-              <Label>Nouveau mot de passe</Label>
-              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            </div>
-
-            <div>
-              <Label>Confirmer nouveau mot de passe</Label>
-              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <Button onClick={handleChangePassword} className="bg-green-600 hover:bg-green-700 text-white">
-              Mettre à jour le mot de passe
-            </Button>
-
-            <Button variant="outline" onClick={() => { setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }}>
-              Annuler
-            </Button>
-          </div>
-
-          {/* 2FA */}
-          <Separator />
-
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-semibold">Authentification à deux facteurs (2FA)</h3>
-              <p className="text-sm text-gray-500">Augmente la sécurité de votre compte en demandant un second facteur.</p>
-            </div>
-
-            <div>
-              <Switch checked={settings.twoFA} onCheckedChange={(v) => handleToggle2FA(Boolean(v))} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ===== PRÉFÉRENCES ===== */}
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

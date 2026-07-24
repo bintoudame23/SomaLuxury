@@ -87,24 +87,21 @@ const CommandesAdminPage: React.FC = () => {
     fetchOrders();
   }, []);
 
-  /* ================= MARK AS PAID ================= */
 
   const markAsPaid = async (order: Order) => {
     try {
-      // 1. ARCHIVER DANS HISTORIQUE
       await databases.createDocument(
         DATABASE_ID,
         HISTORY_COLLECTION,
         "unique()",
         {
-          userId: order.userId, // ✅ FIX IMPORTANT
+          userId: order.userId,
           orderId: order.$id,
           total: order.total,
           date: new Date().toISOString(),
         }
       );
 
-      // 2. METTRE À JOUR LA COMMANDE
       await databases.updateDocument(
         DATABASE_ID,
         COLLECTION_ID,
@@ -114,7 +111,7 @@ const CommandesAdminPage: React.FC = () => {
         }
       );
 
-      // 3. RETIRER DE LA LISTE
+     
       setOrders((prev) => prev.filter((o) => o.$id !== order.$id));
     } catch (err) {
       console.error("Erreur archivage :", err);
@@ -122,7 +119,6 @@ const CommandesAdminPage: React.FC = () => {
     }
   };
 
-  /* ================= FILTRES ================= */
 
   const filteredOrders = orders.filter((order) => {
     const date = new Date(order.$createdAt);
@@ -139,7 +135,7 @@ const CommandesAdminPage: React.FC = () => {
     return matchesMonth && matchesDate;
   });
 
-  /* ================= UI ================= */
+
 
   return (
     <div className="max-w-6xl mx-auto p-6">

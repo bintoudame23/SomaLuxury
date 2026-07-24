@@ -3,23 +3,18 @@
 import * as React from "react";
 import { Calendar } from "@/components/ui/calendar"
 import {
-  IconDashboard,
+
   IconFolder,
   IconInnerShadowTop,
   IconListDetails,
-  IconUsers,
   IconSettings,
   IconShoppingCart,
   IconReportAnalytics,
-  IconWorldSearch,
-  IconMessage,
-  IconInbox,
-  IconNotification
+
 
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
-import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -32,46 +27,20 @@ import {
 
 
 const data = {
-  user: {
-    name: "bintoudame23",
-    email: "fasylla2003@gmail.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    // {
-    //   section: "Dashboard",
-    //   items: [
   
-    //     // { title: "Overview", url: "/admin/dashboard", icon: IconDashboard },
-      
-    //   ],
-    // },
+  navMain: [
+  
     {
       section: "E-Commerce",
       items: [
         { title: "Add New Product", url: "/admin/produit", icon: IconListDetails },
         { title: "Catégories", url: "/admin/categories", icon: IconFolder },
         { title: "Commandes", url: "/admin/commandes", icon: IconShoppingCart },
-        { title: "SupportContact", url: "/admin/support", icon: IconMessage },
         {title: "statistiques", url: "/admin/stats", icon: IconReportAnalytics},
+  
       ],
     },
-    // {
-    //   section: "Users",
-    //   items: [
-     
-    //     { title: "Team", url: "/admin/team", icon: IconUsers },
-    //     { title: "AddEmploye", url: "/admin/addEmploye", icon: IconWorldSearch },
-    //   ],
-    // },
-    //   {
-    //   section: "insights",
-    //   items: [
-       
-    //     { title: "inbox", url: "/admin/inbox", icon: IconInbox },
-    //     { title: "Notifications", url: "/admin/notifications", icon: IconNotification },
-    //   ],
-    // },
+   
     {
       section: "System",
       items: [
@@ -119,7 +88,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
   );
