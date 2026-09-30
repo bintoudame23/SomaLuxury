@@ -1,44 +1,76 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 export interface CartItem {
   id: string;
   name: string;
   price: number;
   image: string;
-
   quantity: number;
-
-  // ✅ ajout des variantes produit
   selectedCouleur?: string[];
 }
 
+type AddToCartInput = Omit<CartItem, "quantity"> & { quantity?: number };
+
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: Omit<CartItem, "quantity">) => void;
+  totalItems: number;
+  addToCart: (item: AddToCartInput) => void;
+  updateQuantity: (id: string, delta: number) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const readStorage = (): CartItem[] => {
+  try {
+    const saved = localStorage.getItem("cart");
+    if (!saved) return [];
+    return JSON.parse(saved).map((i: CartItem) => ({
+      ...i,
+      price: Number(i.price) || 0,
+      quantity: Number(i.quantity) || 1,
+    }));
+  } catch {
+    localStorage.removeItem("cart");
+    return [];
+  }
+};
+
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
-  // 🔹 load localStorage
+  // Chargement initial depuis le localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("cart");
-    if (saved) setCart(JSON.parse(saved));
+    setCart(readStorage());
+    setHydrated(true);
+
+    // Synchronisation si le panier change dans un autre onglet
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "cart") setCart(readStorage());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // 🔹 save localStorage
+  // Sauvegarde (seulement après le chargement initial)
   useEffect(() => {
+    if (!hydrated) return;
     localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+  }, [cart, hydrated]);
 
-  // 🔥 ADD TO CART (fusion automatique)
-  const addToCart = (item: Omit<CartItem, "quantity">) => {
+  const addToCart = (item: AddToCartInput) => {
+    const qty = Math.max(1, Number(item.quantity) || 1);
+
     setCart((prev) => {
       const existing = prev.find((p) => p.id === item.id);
 
@@ -47,15 +79,24 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           p.id === item.id
             ? {
                 ...p,
-                quantity: p.quantity + 1,
-                selectedCouleur: item.selectedCouleur,
+                quantity: p.quantity + qty,
+                selectedCouleur: item.selectedCouleur ?? p.selectedCouleur,
               }
             : p
         );
       }
 
-      return [...prev, { ...item, quantity: 1 }];
+      const { quantity: _ignored, ...rest } = item;
+      return [...prev, { ...rest, quantity: qty }];
     });
+  };
+
+  const updateQuantity = (id: string, delta: number) => {
+    setCart((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, quantity: Math.max(1, p.quantity + delta) } : p
+      )
+    );
   };
 
   const removeFromCart = (id: string) => {
@@ -64,9 +105,21 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const clearCart = () => setCart([]);
 
+  const totalItems = useMemo(
+    () => cart.reduce((sum, i) => sum + i.quantity, 0),
+    [cart]
+  );
+
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, clearCart }}
+      value={{
+        cart,
+        totalItems,
+        addToCart,
+        updateQuantity,
+        removeFromCart,
+        clearCart,
+      }}
     >
       {children}
     </CartContext.Provider>

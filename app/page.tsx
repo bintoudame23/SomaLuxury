@@ -7,7 +7,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { fetchProduct } from "@/lib/addProductClient";
 import { useCart } from "@/context/CartContext";
 
-/* ✅ image obligatoire */
+
 interface Produit {
   id: string;
   name: string;
@@ -38,7 +38,7 @@ const Dashboard = () => {
 
           price: p.prix ?? 0,
 
-          /* ✅ toujours string */
+        
           image: p.images?.[0]
             ? mediaUrl(p.images[0])
             : "/default.jpg",
@@ -69,8 +69,6 @@ const Dashboard = () => {
             key={produit.id}
             className="bg-white rounded-2xl shadow-lg relative overflow-hidden"
           >
-
-            {/* ❤️ FAVORI */}
             <button
               className="absolute top-4 right-4 text-pink-600 text-xl"
               onClick={(e) => {
@@ -87,7 +85,6 @@ const Dashboard = () => {
               {isFavorite(produit.id) ? <FaHeart /> : <FaRegHeart />}
             </button>
 
-            {/* PRODUIT */}
             <Link href={`/boutique/produit/${produit.id}`}>
               <div className="p-5 cursor-pointer">
 
@@ -121,7 +118,7 @@ const Dashboard = () => {
                     id: produit.id,
                     name: produit.name,
                     price: produit.price,
-                    image: produit.image, // ✅ safe string
+                    image: produit.image, 
                   });
 
                   alert(`${produit.name} ajouté au panier`);

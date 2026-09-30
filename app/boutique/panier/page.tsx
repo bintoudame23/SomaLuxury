@@ -1,8 +1,10 @@
 "use client";
 
 import { createCommande } from "@/lib/createCommande";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
+
 import {
   Card,
   CardHeader,
@@ -10,8 +12,10 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import {
   Select,
   SelectTrigger,
@@ -21,131 +25,104 @@ import {
   SelectGroup,
   SelectLabel,
 } from "@/components/ui/select";
+
 import { Label } from "@/components/ui/label";
 
-interface CartItem {
-  id: string;
-  name: string;
-  image?: string;
-  price: number;
-  quantity: number;
-}
-
 interface ClientForm {
-  name: string;
+  nom: string;
   prenom: string;
   email: string;
   adresse: string;
   numero: string;
 }
 
+const emptyForm: ClientForm = {
+  nom: "",
+  prenom: "",
+  email: "",
+  adresse: "",
+  numero: "",
+};
+
+const zones = {
+  "Zones Parcelles Assainies / Libertés": {
+    quartiers: [
+      "Parcelles Assainies",
+      "Soprim",
+      "Grand Medine",
+      "Grand Yoff",
+      "Cambérène",
+      "Golf-sud",
+    ],
+    tarif: 2000,
+  },
+
+  Guediawaye: {
+    quartiers: [
+      "Golf Nord",
+      "Cité Enseignant",
+      "Ndiarème-Limamoulaye",
+      "Wakhinane Nimzatt",
+      "Sam Notaire",
+      "Médina-Gounass",
+    ],
+    tarif: 2500,
+  },
+
+  Pikine: {
+    quartiers: ["Dalifort", "Ann Bel-Air", "Niayes", "Guinaw Rails", "Tally"],
+    tarif: 3000,
+  },
+
+  "Zones Almadies / Corniche Ouest": {
+    quartiers: ["Almadies", "Ngor", "Ouakam", "Yoff", "Plateau"],
+    tarif: 3000,
+  },
+
+  "Zones Centre-ville": {
+    quartiers: [
+      "Médina",
+      "Colobane",
+      "Fass",
+      "Liberté 1",
+      "Liberté 2",
+      "Liberté 3",
+      "Liberté 4",
+      "Liberté 5",
+      "HLM Plateau",
+      "Grand Dakar",
+      "Point E",
+      "Fann",
+      "Mermoz",
+    ],
+    tarif: 3000,
+  },
+
+  "Zone éloignée": {
+    quartiers: [
+      "Rufisque Centre",
+      "Thiaroye",
+      "Sangalkam",
+      "Bargny",
+      "Jaxaay",
+      "Grand Mbao",
+      "Mbao",
+      "Keur Massar",
+      "Keur Mbaye Fall",
+    ],
+    tarif: 5000,
+  },
+};
+
 export default function PanierPage() {
   const router = useRouter();
+  const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
 
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const [form, setForm] = useState<ClientForm>({
-    name: "",
-    prenom: "",
-    email: "",
-    adresse: "",
-    numero: "",
-  });
-
+  const [form, setForm] = useState<ClientForm>(emptyForm);
   const [deliveryZone, setDeliveryZone] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [orderPlaced, setOrderPlaced] = useState(false);
-
-  const zones = {
-    "Zones Parcelles Assainies / Libertés": {
-      quartiers: [
-        "Parcelles Assainies",
-        "Soprim",
-        "Grand Medine",
-        "Grand Yoff",
-        "Cambérène",
-        "Golf-sud",
-      ],
-      tarif: 2000,
-    },
-
-    Guediawaye: {
-      quartiers: [
-        "Golf Nord",
-        "Cité Enseignant",
-        "Ndiarème-Limamoulaye",
-        "Wakhinane Nimzatt",
-        "Sam Notaire",
-        "Médina-Gounass",
-      ],
-      tarif: 2500,
-    },
-
-    Pikine: {
-      quartiers: [
-        "Dalifort",
-        "Ann Bel-Air",
-        "Niayes",
-        "Guinaw Rails",
-        "Tally",
-      ],
-      tarif: 3000,
-    },
-
-    "Zones Almadies / Corniche Ouest": {
-      quartiers: ["Almadies", "Ngor", "Ouakam", "Yoff", "Plateau"],
-      tarif: 3000,
-    },
-
-    "Zones Centre-ville": {
-      quartiers: [
-        "Médina",
-        "Colobane",
-        "Fass",
-        "Liberté 1",
-        "Liberté 2",
-        "Liberté 3",
-        "Liberté 4",
-        "Liberté 5",
-        "HLM Plateau",
-        "Grand Dakar",
-        "Point E",
-        "Fann",
-        "Mermoz",
-      ],
-      tarif: 3000,
-    },
-
-    "Zone éloignée": {
-      quartiers: [
-        "Rufisque Centre",
-        "Thiaroye",
-        "Sangalkam",
-        "Bargny",
-        "Jaxaay",
-        "Grand Mbao",
-        "Mbao",
-        "Keur Massar",
-        "Keur Mbaye Fall",
-      ],
-      tarif: 5000,
-    },
-  };
-
-  useEffect(() => {
-    const saved = localStorage.getItem("cart");
-
-    if (saved) {
-      const parsed = JSON.parse(saved).map((item: any) => ({
-        ...item,
-        price: Number(item.price) || 0,
-        quantity: Number(item.quantity) || 1,
-      }));
-
-      setCart(parsed);
-    }
-  }, []);
 
   const subtotal = cart.reduce(
     (acc, item) => acc + item.price * item.quantity,
@@ -157,34 +134,9 @@ export default function PanierPage() {
   const handleZoneChange = (value: string) => {
     setDeliveryZone(value);
 
-    const zone = Object.values(zones).find((z) =>
-      z.quartiers.includes(value)
-    );
+    const zone = Object.values(zones).find((z) => z.quartiers.includes(value));
 
     setDeliveryFee(zone ? zone.tarif : 0);
-  };
-
-  const updateCart = (updated: CartItem[]) => {
-    setCart(updated);
-    localStorage.setItem("cart", JSON.stringify(updated));
-  };
-
-  const handleQuantityChange = (id: string, delta: number) => {
-    const updated = cart.map((item) =>
-      item.id === id
-        ? {
-            ...item,
-            quantity: Math.max(1, item.quantity + delta),
-          }
-        : item
-    );
-
-    updateCart(updated);
-  };
-
-  const handleRemoveFromCart = (id: string) => {
-    const updated = cart.filter((item) => item.id !== id);
-    updateCart(updated);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -215,18 +167,13 @@ export default function PanierPage() {
         nom_produit: item.name,
         prix: item.price,
         quantite: item.quantity,
+        couleurs: item.selectedCouleur ?? [],
       }))
     );
 
-    /* IMPORTANT :
-       Appwrite demande userId obligatoire
-       Ici on génère un ID unique automatique
-    */
-    const userId = crypto.randomUUID();
-
     const Data = {
-      userId: userId,
-      clientName: `${form.prenom} ${form.name}`,
+      userId: crypto.randomUUID(),
+      clientName: `${form.prenom} ${form.nom}`,
       clientEmail: form.email,
       shippingAddresse: form.adresse,
       clientNumero: form.numero,
@@ -241,11 +188,15 @@ export default function PanierPage() {
     try {
       await createCommande(Data);
 
-      localStorage.removeItem("cart");
-      setCart([]);
+      // Vide le panier (context + localStorage) uniquement si la commande est bien enregistrée
+      clearCart();
+      setForm(emptyForm);
+      setDeliveryZone("");
+      setDeliveryFee(0);
+
       setOrderPlaced(true);
     } catch (error) {
-      console.error("Erreur création commande:", error);
+      console.error("Erreur création commande :", error);
       alert("❌ Erreur lors de l'envoi de la commande");
     } finally {
       setLoading(false);
@@ -259,9 +210,7 @@ export default function PanierPage() {
           ✅ Commande passée avec succès !
         </h2>
 
-        <p className="mb-6 text-gray-700">
-          Merci pour votre commande.
-        </p>
+        <p className="mb-6 text-gray-700">Merci pour votre commande.</p>
 
         <Button
           onClick={() => router.push("/boutique/dashboard")}
@@ -313,11 +262,10 @@ export default function PanierPage() {
 
                     <div className="flex items-center gap-2">
                       <Button
+                        type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() =>
-                          handleQuantityChange(item.id, -1)
-                        }
+                        onClick={() => updateQuantity(item.id, -1)}
                       >
                         -
                       </Button>
@@ -325,21 +273,19 @@ export default function PanierPage() {
                       <span>{item.quantity}</span>
 
                       <Button
+                        type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() =>
-                          handleQuantityChange(item.id, 1)
-                        }
+                        onClick={() => updateQuantity(item.id, 1)}
                       >
                         +
                       </Button>
                     </div>
 
                     <Button
+                      type="button"
                       variant="destructive"
-                      onClick={() =>
-                        handleRemoveFromCart(item.id)
-                      }
+                      onClick={() => removeFromCart(item.id)}
                     >
                       Supprimer
                     </Button>
@@ -347,80 +293,67 @@ export default function PanierPage() {
                 ))}
 
                 <div className="text-right mt-5 space-y-1">
-                  <p>
-                    Sous-total : {subtotal.toLocaleString()} FCFA
-                  </p>
-
-                  <p>
-                    Livraison : {deliveryFee.toLocaleString()} FCFA
-                  </p>
-
+                  <p>Sous-total : {subtotal.toLocaleString()} FCFA</p>
+                  <p>Livraison : {deliveryFee.toLocaleString()} FCFA</p>
                   <p className="font-bold text-lg text-pink-600">
                     Total : {total.toLocaleString()} FCFA
                   </p>
                 </div>
 
-                <form
-                  onSubmit={handleSubmit}
-                  className="mt-8 space-y-4"
-                >
+                <form onSubmit={handleSubmit} className="mt-8 space-y-4">
                   <div>
                     <Label>Quartier</Label>
 
-                    <Select
-                      value={deliveryZone}
-                      onValueChange={handleZoneChange}
-                    >
+                    <Select value={deliveryZone} onValueChange={handleZoneChange}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choisir quartier" />
                       </SelectTrigger>
 
                       <SelectContent>
-                        {Object.entries(zones).map(
-                          ([zone, data]: any) => (
-                            <SelectGroup key={zone}>
-                              <SelectLabel>
-                                {zone}
-                              </SelectLabel>
+                        {Object.entries(zones).map(([zone, data]) => (
+                          <SelectGroup key={zone}>
+                            <SelectLabel>{zone}</SelectLabel>
 
-                              {data.quartiers.map(
-                                (q: string) => (
-                                  <SelectItem
-                                    key={q}
-                                    value={q}
-                                  >
-                                    {q} ({data.tarif} FCFA)
-                                  </SelectItem>
-                                )
-                              )}
-                            </SelectGroup>
-                          )
-                        )}
+                            {data.quartiers.map((q) => (
+                              <SelectItem key={q} value={q}>
+                                {q} ({data.tarif} FCFA)
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(
-                      [
-                        "prenom",
-                        "name",
-                        "email",
-                        "adresse",
-                        "numero",
-                      ] as const
+                      ["prenom", "nom", "email", "adresse", "numero"] as const
                     ).map((field) => (
                       <div key={field}>
-                        <Label>{field}</Label>
+                        <Label>
+                          {field === "prenom"
+                            ? "Prénom"
+                            : field === "nom"
+                            ? "Nom"
+                            : field === "email"
+                            ? "Email"
+                            : field === "adresse"
+                            ? "Adresse"
+                            : "Numéro de téléphone"}
+                        </Label>
 
                         <Input
                           required
+                          type={
+                            field === "email"
+                              ? "email"
+                              : field === "numero"
+                              ? "tel"
+                              : "text"
+                          }
                           value={form[field]}
                           onChange={(e) =>
-                            setForm({
-                              ...form,
-                              [field]: e.target.value,
-                            })
+                            setForm({ ...form, [field]: e.target.value })
                           }
                         />
                       </div>
@@ -432,9 +365,7 @@ export default function PanierPage() {
                     disabled={loading}
                     className="w-full bg-pink-600 text-white"
                   >
-                    {loading
-                      ? "Envoi en cours..."
-                      : "Valider la commande"}
+                    {loading ? "Envoi en cours..." : "Valider la commande"}
                   </Button>
                 </form>
               </>

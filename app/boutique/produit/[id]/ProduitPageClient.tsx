@@ -58,10 +58,6 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
       try {
         const res = await fetchProduct();
 
-        // 🔥 DEBUG IMPORTANT
-        console.log("DATA APPWRITE:", res);
-
-        // 🔥 SÉCURITÉ (évite crash)
         if (!res || !Array.isArray(res)) {
           console.error("❌ Données invalides :", res);
           setProduct(null);
@@ -99,8 +95,7 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
 
         setSimilarProducts(
           products.filter(
-            (p) =>
-              p.categorie === found.categorie && p.$id !== found.$id
+            (p) => p.categorie === found.categorie && p.$id !== found.$id
           )
         );
       } catch (err) {
@@ -116,40 +111,41 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
 
   const toggleColor = (color: string) => {
     setSelectedCouleur((prev) =>
-      prev.includes(color)
-        ? prev.filter((c) => c !== color)
-        : [...prev, color]
+      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
     );
   };
 
   if (loading)
-    return (
-      <div className="p-10 text-center text-gray-500">
-        Chargement...
-      </div>
-    );
+    return <div className="p-10 text-center text-gray-500">Chargement...</div>;
 
   if (!product)
     return (
-      <div className="p-10 text-center text-red-500">
-        Produit introuvable
-      </div>
+      <div className="p-10 text-center text-red-500">Produit introuvable</div>
     );
 
   const couleursArray = product.couleur ?? [];
 
+  const handleAddToCart = () => {
+    addToCart({
+      id: product.$id,
+      name: product.nom_produit,
+      price: product.prix,
+      image: selectedImage,
+      quantity,
+      selectedCouleur: selectedCouleur.length ? selectedCouleur : undefined,
+    });
+
+    setQuantity(1);
+    alert("Produit ajouté au panier");
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-16 space-y-16">
-
       {/* PRODUIT */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-
         {/* LEFT */}
         <div className="space-y-6">
-
-          <h1 className="text-4xl font-bold">
-            {product.nom_produit}
-          </h1>
+          <h1 className="text-4xl font-bold">{product.nom_produit}</h1>
 
           <p className="text-2xl font-semibold">
             {product.prix.toLocaleString()} FCFA
@@ -166,12 +162,12 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
                 {couleursArray.map((c) => (
                   <button
                     key={c}
+                    type="button"
+                    title={c}
                     onClick={() => toggleColor(c)}
                     style={{ backgroundColor: colorMap[c] || "#ccc" }}
                     className={`w-10 h-10 rounded-full border ${
-                      selectedCouleur.includes(c)
-                        ? "ring-2 ring-black"
-                        : ""
+                      selectedCouleur.includes(c) ? "ring-2 ring-black" : ""
                     }`}
                   />
                 ))}
@@ -182,9 +178,8 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
           {/* QUANTITY */}
           <div className="flex gap-4 items-center">
             <button
-              onClick={() =>
-                quantity > 1 && setQuantity(quantity - 1)
-              }
+              type="button"
+              onClick={() => quantity > 1 && setQuantity(quantity - 1)}
               className="px-3 py-1 border"
             >
               -
@@ -193,6 +188,7 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
             <span>{quantity}</span>
 
             <button
+              type="button"
               onClick={() => setQuantity(quantity + 1)}
               className="px-3 py-1 border"
             >
@@ -202,16 +198,8 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
 
           {/* ADD TO CART */}
           <button
-            onClick={() => {
-              addToCart({
-                id: product.$id,
-                name: product.nom_produit,
-                price: product.prix,
-                image: selectedImage,
-              });
-
-              alert("Produit ajouté au panier");
-            }}
+            type="button"
+            onClick={handleAddToCart}
             className="w-full bg-gray-800 text-white py-3 rounded-full hover:bg-gray-700 transition"
           >
             Ajouter au panier
@@ -220,10 +208,7 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
 
         {/* RIGHT */}
         <div>
-          <img
-            src={selectedImage}
-            className="w-full h-[400px] object-contain"
-          />
+          <img src={selectedImage} className="w-full h-[400px] object-contain" />
 
           <div className="flex gap-3 mt-4">
             {product.images?.map((img) => (
@@ -241,24 +226,18 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
       {/* SIMILAIRES */}
       {similarProducts.length > 0 && (
         <div>
-          <h2 className="text-2xl font-bold mb-6">
-            Produits similaires
-          </h2>
+          <h2 className="text-2xl font-bold mb-6">Produits similaires</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {similarProducts.map((p) => (
               <div
                 key={p.$id}
-                onClick={() =>
-                  router.push(`/boutique/produit/${p.$id}`)
-                }
+                onClick={() => router.push(`/boutique/produit/${p.$id}`)}
                 className="cursor-pointer hover:scale-105 transition"
               >
                 <img
                   src={
-                    p.images?.[0]
-                      ? mediaUrl(p.images[0])
-                      : "/default.jpg"
+                    p.images?.[0] ? mediaUrl(p.images[0]) : "/default.jpg"
                   }
                   className="h-40 w-full object-cover"
                 />

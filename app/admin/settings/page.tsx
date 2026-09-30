@@ -39,7 +39,6 @@ const SETTINGS_KEY = "admin_settings_v1";
 export default function SettingsPage() {
   const router = useRouter();
 
-  // Profile state
   const [profile, setProfile] = useState<Profile>({
     firstName: "Fatou",
     lastName: "Sylla",
@@ -192,8 +191,6 @@ export default function SettingsPage() {
       "Supprimer le compte ? Cela supprimera les données locales (profil & paramètres). Cette action est irréversible."
     );
     if (!ok) return;
-
-    // Purge local storage keys we used
     try {
       localStorage.removeItem(PROFILE_KEY);
       localStorage.removeItem(SETTINGS_KEY);

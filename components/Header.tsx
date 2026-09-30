@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchProduct } from "@/lib/addProductClient";
+import { useCart } from "@/context/CartContext";
 
 interface Product {
   id: string;
@@ -14,13 +15,12 @@ interface Product {
 
 export default function Header() {
   const router = useRouter();
+  const { totalItems } = useCart();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [results, setResults] = useState<Product[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const [cart, setCart] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
 
   const categories = [
@@ -51,11 +51,27 @@ export default function Header() {
     load();
   }, []);
 
-  useEffect(() => {
-    setCart(JSON.parse(localStorage.getItem("cart") || "[]"));
-    setFavorites(JSON.parse(localStorage.getItem("favorites") || "[]"));
+  /* FAVORIS */
+  const loadFavorites = useCallback(() => {
+    try {
+      setFavorites(JSON.parse(localStorage.getItem("favorites") || "[]"));
+    } catch {
+      setFavorites([]);
+    }
   }, []);
 
+  useEffect(() => {
+    loadFavorites();
+    window.addEventListener("favorites-updated", loadFavorites);
+    window.addEventListener("storage", loadFavorites);
+
+    return () => {
+      window.removeEventListener("favorites-updated", loadFavorites);
+      window.removeEventListener("storage", loadFavorites);
+    };
+  }, [loadFavorites]);
+
+  /* SEARCH */
   useEffect(() => {
     if (!searchTerm.trim()) return setResults([]);
 
@@ -66,15 +82,11 @@ export default function Header() {
     );
   }, [searchTerm, products]);
 
-  const totalItems = cart.reduce((sum, i) => sum + i.quantity, 0);
-
   return (
     <>
       {/* HEADER */}
       <header className="sticky top-0 z-50 bg-white border-b">
-
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-
           {/* LOGO */}
           <Link href="/boutique/dashboard">
             <img src="/somaluxury.png" className="h-12" />
@@ -89,7 +101,6 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* SEARCH */}
           <div className="hidden sm:flex flex-1 justify-center px-4">
             <input
               value={searchTerm}
@@ -99,24 +110,28 @@ export default function Header() {
             />
           </div>
 
-          {/* ICONS */}
-          <div className="flex gap-3 items-center">
-          
-            <button onClick={() => router.push("/boutique/favoris")}>
+          <div className="flex gap-3 items-center cursor-pointer">
+            <button
+              onClick={() => router.push("/boutique/favoris")}
+              className="cursor-pointer"
+            >
               ❤️ {favorites.length}
             </button>
 
-            <button onClick={() => router.push("/boutique/panier")}>
+            <button
+              onClick={() => router.push("/boutique/panier")}
+              className="cursor-pointer"
+            >
               🛒 {totalItems}
             </button>
 
-            <button onClick={() => router.push("/boutique/support")}>
+            <button
+              onClick={() => router.push("/boutique/support")}
+              className="cursor-pointer"
+            >
               💬
             </button>
 
-          
-
-            {/* MOBILE MENU BUTTON */}
             <button
               className="md:hidden text-2xl"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -126,10 +141,9 @@ export default function Header() {
           </div>
         </div>
 
-        {/* 🔥 MOBILE MENU */}
+        {/* MOBILE MENU */}
         {menuOpen && (
           <div className="md:hidden bg-white border-t p-4 space-y-3">
-
             {categories.map((c) => (
               <Link
                 key={c.href}
@@ -140,18 +154,6 @@ export default function Header() {
                 {c.label}
               </Link>
             ))}
-
-            {/* 🔥 PROFIL MOBILE */}
-            {/* <button
-              onClick={() => {
-                router.push("/boutique/profil");
-                setMenuOpen(false);
-              }}
-              className="block w-full text-left py-2 border-b"
-            >
-              👤 Profil
-            </button> */}
-
           </div>
         )}
       </header>
@@ -159,7 +161,6 @@ export default function Header() {
       {/* SEARCH RESULTS */}
       {searchTerm && (
         <div className="absolute w-full bg-white shadow-lg z-50 max-h-96 overflow-y-auto">
-
           {results.length > 0 ? (
             results.map((p) => (
               <Link
