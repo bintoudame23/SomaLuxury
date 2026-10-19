@@ -29,8 +29,6 @@ export const addProduct = async (produitData: any) => {
       description: produitData.description,
       prix: produitData.prix,
       quantite: produitData.quantite,
-
-      // ✅ FIX ICI : toujours un tableau
       couleur: Array.isArray(produitData.couleur)
         ? produitData.couleur
         : produitData.couleur

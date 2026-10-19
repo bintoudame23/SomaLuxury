@@ -7,7 +7,6 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { fetchProduct } from "@/lib/addProductClient";
 import { useCart } from "@/context/CartContext";
 
-
 interface Produit {
   id: string;
   name: string;
@@ -73,7 +72,6 @@ const Dashboard = () => {
               className="absolute top-4 right-4 text-pink-600 text-xl"
               onClick={(e) => {
                 e.stopPropagation();
-
                 toggleFavorite({
                   id: produit.id,
                   name: produit.name,
@@ -87,13 +85,11 @@ const Dashboard = () => {
 
             <Link href={`/boutique/produit/${produit.id}`}>
               <div className="p-5 cursor-pointer">
-
                 <img
                   src={produit.image}
                   alt={produit.name}
                   className="h-60 w-full object-cover rounded-xl mb-4"
                 />
-
                 <h3 className="font-semibold">{produit.name}</h3>
 
                 <p className="text-sm text-gray-500">
@@ -107,13 +103,10 @@ const Dashboard = () => {
               </div>
             </Link>
 
-            {/* CART */}
             <div className="p-5 pt-0">
-
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-
                   addToCart({
                     id: produit.id,
                     name: produit.name,

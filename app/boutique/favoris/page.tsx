@@ -34,6 +34,9 @@ export default function FavorisPage() {
     const updated = favorites.filter((f) => f.id !== id);
     setFavorites(updated);
     localStorage.setItem("favorites", JSON.stringify(updated));
+
+    // 🔥 prévient le Header immédiatement
+    window.dispatchEvent(new Event("favorites-updated"));
   };
 
   const addToCart = (product: Product) => {
@@ -49,6 +52,9 @@ export default function FavorisPage() {
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
+
+    // 🔥 prévient le Header immédiatement
+    window.dispatchEvent(new Event("cart-updated"));
 
     alert("Produit ajouté au panier !");
   };

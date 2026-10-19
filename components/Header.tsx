@@ -12,17 +12,14 @@ interface Product {
   price: number;
   image?: string;
 }
-
 export default function Header() {
   const router = useRouter();
   const { totalItems } = useCart();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [results, setResults] = useState<Product[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
-
   const categories = [
     { href: "/boutique/categories/beaute", label: "Beauté" },
     { href: "/boutique/categories/bijoux", label: "Bijoux" },
@@ -31,7 +28,6 @@ export default function Header() {
     { href: "/boutique/categories/vetements", label: "Vêtements" },
   ];
 
-  /* PRODUCTS */
   useEffect(() => {
     const load = async () => {
       const res = await fetchProduct();
@@ -51,7 +47,6 @@ export default function Header() {
     load();
   }, []);
 
-  /* FAVORIS */
   const loadFavorites = useCallback(() => {
     try {
       setFavorites(JSON.parse(localStorage.getItem("favorites") || "[]"));
@@ -70,8 +65,6 @@ export default function Header() {
       window.removeEventListener("storage", loadFavorites);
     };
   }, [loadFavorites]);
-
-  /* SEARCH */
   useEffect(() => {
     if (!searchTerm.trim()) return setResults([]);
 
@@ -81,18 +74,13 @@ export default function Header() {
       )
     );
   }, [searchTerm, products]);
-
   return (
     <>
-      {/* HEADER */}
       <header className="sticky top-0 z-50 bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          {/* LOGO */}
           <Link href="/boutique/dashboard">
             <img src="/somaluxury.png" className="h-12" />
           </Link>
-
-          {/* DESKTOP MENU */}
           <nav className="hidden md:flex gap-6 text-sm font-medium">
             {categories.map((c) => (
               <Link key={c.href} href={c.href}>
@@ -184,7 +172,7 @@ export default function Header() {
             </p>
           )}
         </div>
-      )}
+      )}drive
     </>
   );
 }

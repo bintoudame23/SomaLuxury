@@ -21,7 +21,6 @@ interface Product {
 interface ProduitPageClientProps {
   produitId: string;
 }
-
 const mediaUrl = (id: string) =>
   `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_BUCKET_MEDIA_ID}/files/${id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
 
@@ -37,10 +36,8 @@ const colorMap: Record<string, string> = {
   Orange: "#FFA500",
   Rose: "#FFC0CB",
 };
-
 const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
   const router = useRouter();
-
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [selectedCouleur, setSelectedCouleur] = useState<string[]>([]);
@@ -54,16 +51,13 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
   useEffect(() => {
     const loadProduct = async () => {
       setLoading(true);
-
       try {
         const res = await fetchProduct();
-
         if (!res || !Array.isArray(res)) {
           console.error("❌ Données invalides :", res);
           setProduct(null);
           return;
         }
-
         const products: Product[] = res.map((p: any) => ({
           $id: p.$id,
           nom_produit: p.nom_produit ?? "Produit inconnu",
@@ -78,21 +72,16 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
           couleur: Array.isArray(p.couleur) ? p.couleur : [],
           nouveau: p.nouveau ?? false,
         }));
-
         const found = products.find((p) => p.$id === produitId);
-
         if (!found) {
           console.warn("❌ Produit non trouvé avec ID :", produitId);
           setProduct(null);
           return;
         }
-
         setProduct(found);
-
         setSelectedImage(
           found.images?.length ? mediaUrl(found.images[0]) : "/default.jpg"
         );
-
         setSimilarProducts(
           products.filter(
             (p) => p.categorie === found.categorie && p.$id !== found.$id
@@ -105,26 +94,20 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
         setLoading(false);
       }
     };
-
     if (produitId) loadProduct();
   }, [produitId]);
-
   const toggleColor = (color: string) => {
     setSelectedCouleur((prev) =>
       prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
     );
   };
-
   if (loading)
     return <div className="p-10 text-center text-gray-500">Chargement...</div>;
-
   if (!product)
     return (
       <div className="p-10 text-center text-red-500">Produit introuvable</div>
     );
-
   const couleursArray = product.couleur ?? [];
-
   const handleAddToCart = () => {
     addToCart({
       id: product.$id,
@@ -134,30 +117,21 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
       quantity,
       selectedCouleur: selectedCouleur.length ? selectedCouleur : undefined,
     });
-
     setQuantity(1);
     alert("Produit ajouté au panier");
   };
-
   return (
     <div className="max-w-7xl mx-auto px-6 py-16 space-y-16">
-      {/* PRODUIT */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-        {/* LEFT */}
         <div className="space-y-6">
           <h1 className="text-4xl font-bold">{product.nom_produit}</h1>
-
           <p className="text-2xl font-semibold">
             {product.prix.toLocaleString()} FCFA
           </p>
-
           <p>{product.description}</p>
-
-          {/* COULEURS */}
           {couleursArray.length > 0 && (
             <div>
               <p className="font-medium mb-2">Couleurs disponibles</p>
-
               <div className="flex gap-3 flex-wrap">
                 {couleursArray.map((c) => (
                   <button
@@ -174,8 +148,6 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
               </div>
             </div>
           )}
-
-          {/* QUANTITY */}
           <div className="flex gap-4 items-center">
             <button
               type="button"
@@ -184,9 +156,7 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
             >
               -
             </button>
-
             <span>{quantity}</span>
-
             <button
               type="button"
               onClick={() => setQuantity(quantity + 1)}
@@ -195,8 +165,6 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
               +
             </button>
           </div>
-
-          {/* ADD TO CART */}
           <button
             type="button"
             onClick={handleAddToCart}
@@ -205,11 +173,8 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
             Ajouter au panier
           </button>
         </div>
-
-        {/* RIGHT */}
         <div>
           <img src={selectedImage} className="w-full h-[400px] object-contain" />
-
           <div className="flex gap-3 mt-4">
             {product.images?.map((img) => (
               <img
@@ -222,12 +187,9 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
           </div>
         </div>
       </div>
-
-      {/* SIMILAIRES */}
       {similarProducts.length > 0 && (
         <div>
           <h2 className="text-2xl font-bold mb-6">Produits similaires</h2>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {similarProducts.map((p) => (
               <div
@@ -251,5 +213,4 @@ const ProduitPageClient: React.FC<ProduitPageClientProps> = ({ produitId }) => {
     </div>
   );
 };
-
 export default ProduitPageClient;

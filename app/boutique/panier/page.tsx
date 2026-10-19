@@ -188,7 +188,6 @@ export default function PanierPage() {
     try {
       await createCommande(Data);
 
-      // Vide le panier (context + localStorage) uniquement si la commande est bien enregistrée
       clearCart();
       setForm(emptyForm);
       setDeliveryZone("");
