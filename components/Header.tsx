@@ -29,6 +29,7 @@ export default function Header() {
   ];
 
   useEffect(() => {
+    
     const load = async () => {
       const res = await fetchProduct();
 
@@ -105,7 +106,6 @@ export default function Header() {
             >
               ❤️ {favorites.length}
             </button>
-
             <button
               onClick={() => router.push("/boutique/panier")}
               className="cursor-pointer"
